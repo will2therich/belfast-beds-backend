@@ -1,0 +1,159 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\Properties;
+use App\Models\PropertyOption;
+use App\Models\Supplier;
+use App\Services\RetailSystemSoapService;
+use Illuminate\Console\Command;
+
+class RetailSystemFullSync extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'rs:full-sync';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Creates a full data sync from retail system';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(RetailSystemSoapService $retailSystemSoapService)
+    {
+
+        $catalog = $retailSystemSoapService->getCatalog();
+
+//        $this->info('Product categories sync started - ' . time() );
+//        $this->handleProductCategories($catalog);
+//        $this->newLine();
+//        $this->info('Product categories sync finished - ' . time());
+
+        $this->withProgressBar($catalog['Suppliers']['Supplier'], function ($supplierData) {
+            $supplierId = $supplierData['@attributes']['id'];
+
+            if (empty($supplier['Brand']['WebName']['@attributes']['attribute'])) {
+                $supplierName = $supplierData['@attributes']['attribute'];
+            } else {
+                $supplierName = $supplierData['Brand']['WebName']['@attributes']['attribute'];
+            }
+
+            $supplier = Supplier::where('rs_id', $supplierId)->first();
+            if (!$supplier instanceof Supplier) $supplier = new Supplier();
+
+            $supplier->rs_id = $supplierId;
+            $supplier->name = $supplierName;
+            $supplier->save();
+
+            if (!empty($supplierData['Brand']['OptionGroup'])) {
+                // If its not a multi-item array then force it to be one.
+                if (isset($supplierData['Brand']['OptionGroup']['@attributes'])) {
+                    $supplierData['Brand']['OptionGroup'] = [$supplierData['Brand']['OptionGroup']];
+                }
+
+                // Import Option Groups & their options
+                foreach ($supplierData['Brand']['OptionGroup'] as $optionGroup) {
+                    $optionGroupId = $optionGroup['@attributes']['id'];
+                    $optionGroupName = $optionGroup['@attributes']['attribute'];
+
+                    $propertyObj = Properties::where('rs_id', $optionGroupId)->first();
+                    if (!$propertyObj instanceof Properties) $propertyObj = new Properties();
+
+                    $propertyObj->rs_id = $optionGroupId;
+                    $propertyObj->name = $optionGroupName;
+                    $propertyObj->save();
+
+
+                    foreach ($optionGroup['Option'] as $option) {
+                        $optionId = $option['@attributes']['id'];
+                        $optionName = $option['@attributes']['attribute'];
+
+                        $propertyValueObj = PropertyOption::where('rs_id', $optionId)->first();
+                        if (!$propertyValueObj instanceof PropertyOption) $propertyValueObj = new PropertyOption();
+
+                        $propertyValueObj->rs_id = $optionId;
+                        $propertyValueObj->name = $optionName;
+                        $propertyValueObj->property_id = $propertyObj->id;
+                        $propertyValueObj->save();
+                    }
+                }
+            }
+
+            if (!empty($supplierData['Brand']['ProductRange'])) {
+                // If its not a multi-item array then force it to be one.
+                if (isset($supplierData['Brand']['ProductRange']['@attributes'])) $supplierData['Brand']['ProductRange'] = [$supplierData['Brand']['ProductRange']];
+
+                // Import Option Groups & their options
+                foreach ($supplierData['Brand']['ProductRange'] as $productRange) {
+
+                    if (isset($productRange['Product'])) {
+                        // Force it to array format.
+                        if (isset($productRange['Product']['@attributes'])) $productRange['Product'] = [$productRange['Product']];
+
+
+                        foreach ($productRange['Product'] as $product) {
+                            $productId = $product['@attributes']['id'];
+                            $productName = $product['@attributes']['attribute'];
+                            $webEnabled = false;
+
+                            if (isset($product['@attributes']['webenabled'])) {
+                                $webEnabled = $product['@attributes']['webenabled'];
+                            }
+
+                            $productObj = Product::where('rs_id', $productId)->first();
+                            if (!$productObj instanceof Product) $productObj = new Product();
+
+                            $productObj->rs_id = $productId;
+                            $productObj->name = $productName;
+                            $productObj->enabled = $webEnabled;
+                            $productObj->save();
+                        }
+                    }
+                }
+            }
+        });
+
+
+    }
+
+
+    private function handleProductCategories($catalog)
+    {
+        $this->withProgressBar($catalog['ProductCategories']['ProductCategory'], function ($productCategory) {
+            $parentCategoryId = null;
+            $attributes = $productCategory['@attributes'];
+
+            $category = ProductCategory::where('rs_id', $attributes['id'])->first();
+            if (!$category instanceof ProductCategory) $category = new ProductCategory();
+
+            $category->rs_id = $attributes['id'];
+            $category->name = $attributes['attribute'];
+            $category->save();
+
+            if (!empty($productCategory['ProductCategory'])) {
+                $parentCategoryId = $category->id;
+
+                foreach ($productCategory['ProductCategory'] as $childProductCategory) {
+                    $childAttribute = $childProductCategory['@attributes'];
+                    $childCategory = ProductCategory::where('rs_id', $childAttribute['id'])->first();
+                    if (!$childCategory instanceof ProductCategory) $childCategory = new ProductCategory();
+
+                    $childCategory->rs_id = $childAttribute['id'];
+                    $childCategory->name = $childAttribute['attribute'];
+                    $childCategory->parent_category_id = $parentCategoryId;
+                    $childCategory->save();
+                }
+            }
+        });
+    }
+}
