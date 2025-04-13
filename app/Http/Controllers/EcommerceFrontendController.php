@@ -23,13 +23,19 @@ class EcommerceFrontendController
             $tempArray['id'] = $category['id'];
             $tempArray['name'] = $category['name'];
             $tempArray['subCategories'] = [];
+            $childCategories = [];
+
+
+            foreach ($category['child_categories'] as $key => $value) {
+                if ($value['enabled']) $childCategories[] = $value;
+            };
 
 
             // By Type Filter
             if (isset($category['child_categories'])) {
                 $tempArray['subCategories'] = [
                     'name' => 'By Type',
-                    'subCategories' => $category['child_categories']
+                    'subCategories' => $childCategories
                 ];
             }
 

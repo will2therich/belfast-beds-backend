@@ -16,6 +16,8 @@ class ProductCategory extends Model
         $table->string('rs_id')->index();
         $table->integer('parent_category_id')->nullable();
         $table->string('link')->nullable();
+        $table->boolean('enabled')->default(true);
+        $table->integer('order')->default(1);
         $table->timestamps();
     }
 
