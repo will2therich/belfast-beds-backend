@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PivotTables\ProductProperties;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Properties;
@@ -104,11 +105,12 @@ class RetailSystemFullSync extends Command
 
                 // Import Option Groups & their options
                 foreach ($supplierData['Brand']['OptionGroup'] as $optionGroup) {
+
                     $optionGroupId = $optionGroup['@attributes']['id'];
                     $optionGroupName = $optionGroup['@attributes']['attribute'];
-
                     $propertyObj = Properties::where('rs_id', $optionGroupId)->first();
                     if (!$propertyObj instanceof Properties) $propertyObj = new Properties();
+
 
                     $propertyObj->rs_id = $optionGroupId;
                     $propertyObj->name = $optionGroupName;
@@ -118,6 +120,14 @@ class RetailSystemFullSync extends Command
                     foreach ($optionGroup['Option'] as $option) {
                         $optionId = $option['@attributes']['id'];
                         $optionName = $option['@attributes']['attribute'];
+                        $photos = [];
+
+                        if (isset($option['Photo'])) {
+                            if (isset($option['Photo']['@attributes'])) $option['Photo'] = [$option['Photo']];
+                            foreach ($option['Photo'] as $photo) {
+                                $photos[] = $photo['@attributes']['attribute'];
+                            }
+                        }
 
                         $propertyValueObj = PropertyOption::where('rs_id', $optionId)->first();
                         if (!$propertyValueObj instanceof PropertyOption) $propertyValueObj = new PropertyOption();
@@ -125,6 +135,7 @@ class RetailSystemFullSync extends Command
                         $propertyValueObj->rs_id = $optionId;
                         $propertyValueObj->name = $optionName;
                         $propertyValueObj->property_id = $propertyObj->id;
+                        $propertyValueObj->photos = $photos;
                         $propertyValueObj->save();
                     }
                 }
@@ -153,14 +164,26 @@ class RetailSystemFullSync extends Command
 
                             $productObj = Product::where('rs_id', $productId)->first();
                             if (!$productObj instanceof Product) $productObj = new Product();
+                            $photos = [];
+
+                            if (isset($product['PhotoHiRes'])) {
+                                if (isset($product['PhotoHiRes']['@attributes'])) $product['PhotoHiRes'] = [$product['PhotoHiRes']];
+                                foreach ($product['PhotoHiRes'] as $photo) {
+                                    if (isset($photo['@attributes'])) {
+                                        $photos[] = $photo['@attributes']['attribute'];
+                                    }
+                                }
+                            }
+
 
                             $productObj->rs_id = $productId;
                             $productObj->name = $productName;
                             $productObj->enabled = $webEnabled;
+                            $productObj->photos = $photos;
                             $productObj->save();
-                            dd($product);
 
                             $this->syncProductCategories($productObj, $product);
+                            $this->syncProductProperties($productObj, $product);
                         }
                     }
                 }
@@ -184,5 +207,24 @@ class RetailSystemFullSync extends Command
 
             $productObj->categories()->sync($rsCategoryId);
         }
+    }
+
+    private function syncProductProperties(Product $productObj, $productData)
+    {
+        if (isset($productData['OptionLink'])) {
+            if (isset($productData['OptionLink']['@attributes'])) $productData['OptionLink'] = [$productData['OptionLink']];
+            $propertyOptions = [];
+
+            foreach ($productData['OptionLink'] as $optionLink) {
+                $exists = PropertyOption::where('rs_id', $optionLink['@attributes']['linkid'])->exists();
+
+                if ($exists) {
+                    $propertyOptions[] = $optionLink['@attributes']['linkid'];
+                }
+            }
+
+            $productObj->options()->sync($propertyOptions);
+        }
+
     }
 }

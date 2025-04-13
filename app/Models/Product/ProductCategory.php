@@ -15,6 +15,7 @@ class ProductCategory extends Model
         $table->string('name');
         $table->string('rs_id')->index();
         $table->integer('parent_category_id')->nullable();
+        $table->string('link')->nullable();
         $table->timestamps();
     }
 
@@ -31,5 +32,21 @@ class ProductCategory extends Model
             'rs_id',
             'rs_id'
         );
+    }
+
+    /**
+     * Get the parent category of the current category.
+     */
+    public function parentCategory()
+    {
+        return $this->belongsTo(self::class, 'parent_category_id');
+    }
+
+    /**
+     * Get the child categories of the current category.
+     */
+    public function childCategories()
+    {
+        return $this->hasMany(self::class, 'parent_category_id');
     }
 }
