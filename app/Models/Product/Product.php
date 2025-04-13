@@ -22,6 +22,7 @@ class Product extends Model
         $table->string('rs_id')->index();
         $table->boolean('enabled')->default(true);
         $table->longText('photos')->nullable();
+        $table->float('starting_price')->nullable();
         $table->timestamps();
     }
 

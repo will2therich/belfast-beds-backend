@@ -209,8 +209,10 @@ class RetailSystemFullSync extends Command
 
                             $this->syncProductCategories($productObj, $product);
                             $this->syncProductProperties($productObj, $product);
+                            $startingPrice = null;
 
                             if (isset($product['Link'])) {
+
                                 ProductPriceGroup::where('rs_product_id', $productObj->rs_id)->delete();
 
                                 if (isset($product['Link']['@attributes'])) $product['Link'] = [$product['Link']];
@@ -219,19 +221,27 @@ class RetailSystemFullSync extends Command
                                     $productPriceGroupObj = new ProductPriceGroup();
                                     $priceGroupOptionObj = PriceGroupOptions::where('rs_id', $link['@attributes']['linkid'])->first();
                                     $priceGroup = $priceGroupOptionObj->pricegroup;
-
                                     $productPriceGroupObj->rs_product_id = $productObj->rs_id;
                                     $productPriceGroupObj->rs_price_group_option_id = $link['@attributes']['linkid'];
                                     $productPriceGroupObj->price_group_id = $priceGroup->id;
                                     $productPriceGroupObj->name = $priceGroupOptionObj->name;
 
                                     if (isset($link['Prices']['@attributes'])) {
+                                        if ($startingPrice == null)  {
+                                            $startingPrice = $link['Prices']['@attributes']['price'];
+                                        } elseif ($startingPrice > $link['Prices']['@attributes']['price']) {
+                                            $startingPrice = $link['Prices']['@attributes']['price'];
+                                        }
+
                                         $productPriceGroupObj->price = $link['Prices']['@attributes']['price'];
                                     }
 
                                     $productPriceGroupObj->save();
                                 }
                             }
+
+                            $productObj->starting_price = $startingPrice;
+                            $productObj->save();
                         }
                     }
                 }
