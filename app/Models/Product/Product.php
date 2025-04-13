@@ -2,6 +2,7 @@
 
 namespace App\Models\Product;
 
+use App\Models\PivotTables\ProductPriceGroup;
 use App\Models\PropertyOption;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
@@ -53,5 +54,10 @@ class Product extends Model
             'rs_id',
             'rs_id'
         );
+    }
+
+    public function priceOptions()
+    {
+        return $this->hasMany(ProductPriceGroup::class, 'rs_product_id', 'rs_id');
     }
 }

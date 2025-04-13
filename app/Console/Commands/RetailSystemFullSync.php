@@ -217,9 +217,14 @@ class RetailSystemFullSync extends Command
 
                                 foreach ($product['Link'] as $link) {
                                     $productPriceGroupObj = new ProductPriceGroup();
+                                    $priceGroupOptionObj = PriceGroupOptions::where('rs_id', $link['@attributes']['linkid'])->first();
+                                    $priceGroup = $priceGroupOptionObj->pricegroup;
 
                                     $productPriceGroupObj->rs_product_id = $productObj->rs_id;
-                                    $productPriceGroupObj->rs_price_group_id = $link['@attributes']['linkid'];
+                                    $productPriceGroupObj->rs_price_group_option_id = $link['@attributes']['linkid'];
+                                    $productPriceGroupObj->price_group_id = $priceGroup->id;
+                                    $productPriceGroupObj->name = $priceGroupOptionObj->name;
+
                                     if (isset($link['Prices']['@attributes'])) {
                                         $productPriceGroupObj->price = $link['Prices']['@attributes']['price'];
                                     }

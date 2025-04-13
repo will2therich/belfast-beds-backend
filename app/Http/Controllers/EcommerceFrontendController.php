@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PriceGroup;
+use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
+use App\Models\Properties;
 
 class EcommerceFrontendController
 {
@@ -46,5 +49,60 @@ class EcommerceFrontendController
         return response()->json([
             'menu' => $formattedMenu
         ]);
+    }
+
+    public function loadProduct()
+    {
+        $product = Product::find(2);
+        $productArray = $product->toArray();
+        $properties = [];
+        $priceOptionsArr = [];
+
+
+        $options = $product->options;
+        $priceOptions = $product->priceOptions()->orderBy('price')->get();
+
+
+        foreach ($priceOptions as $priceOption) {
+            if (!isset($priceOptionsArr[$priceOption->price_group_id])) {
+                $priceGroup = PriceGroup::find($priceOption->price_group_id);
+
+                if ($priceGroup instanceof PriceGroup) {
+                    $priceOptionsArr[$priceOption->price_group_id] = [
+                        'id' => $priceGroup->id,
+                        'rs_id' => $priceGroup->rs_id,
+                        'name' => $priceGroup->name,
+                        'type' => 'PriceGroup',
+                        'values' => []
+                    ];
+                }
+            }
+
+            $priceOptionsArr[$priceOption->price_group_id]['values'][] = $priceOption->toArray();
+        }
+
+
+        foreach  ($options as $option) {
+            if (!isset($properties[$option->property_id])) {
+                $propertyObj = Properties::find($option->property_id);
+
+                if ($propertyObj instanceof Properties) {
+                    $properties[$option->property_id] = [
+                        'id' => $propertyObj->id,
+                        'rs_id' => $propertyObj->rs_id,
+                        'name' => $propertyObj->name,
+                        'type' => 'Option',
+                        'values' => []
+                    ];
+                }
+            }
+
+            $properties[$option->property_id]['values'][] = $option->toArray();
+
+        }
+
+        $productArray['fields'] = array_merge($priceOptionsArr, $properties);
+
+        return response()->json($productArray);
     }
 }
