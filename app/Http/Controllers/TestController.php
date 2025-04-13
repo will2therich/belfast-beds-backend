@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers; // Adjust namespace if needed
 
-use App\Services\RetailSystemSoapService;
+use App\Models\Product\ProductCategory;
 use Illuminate\Routing\Controller;
 class TestController extends Controller
 {
-    public function test(RetailSystemSoapService $retailSystemSoapService)
+    public function test()
     {
-        dd($retailSystemSoapService->getCatalog());
+        $category = ProductCategory::find(119);
+
+        dd($category->products()->get());
     }
 }

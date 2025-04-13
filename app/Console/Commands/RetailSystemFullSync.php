@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Product;
-use App\Models\ProductCategory;
+use App\Models\Product\Product;
+use App\Models\Product\ProductCategory;
 use App\Models\Properties;
 use App\Models\PropertyOption;
 use App\Models\Supplier;
@@ -34,11 +34,52 @@ class RetailSystemFullSync extends Command
 
         $catalog = $retailSystemSoapService->getCatalog();
 
-//        $this->info('Product categories sync started - ' . time() );
-//        $this->handleProductCategories($catalog);
-//        $this->newLine();
-//        $this->info('Product categories sync finished - ' . time());
+        $this->info('Product categories sync started - ' . time() );
+        $this->handleProductCategories($catalog);
+        $this->newLine();
+        $this->info('Product categories sync finished - ' . time());
 
+        $this->info('Suppliers sync started - ' . time() );
+        $this->handleSuppliers($catalog);
+        $this->newLine();
+        $this->info('Suppliers sync finished - ' . time());
+
+
+    }
+
+
+    private function handleProductCategories($catalog)
+    {
+        $this->withProgressBar($catalog['ProductCategories']['ProductCategory'], function ($productCategory) {
+            $parentCategoryId = null;
+            $attributes = $productCategory['@attributes'];
+
+            $category = ProductCategory::where('rs_id', $attributes['id'])->first();
+            if (!$category instanceof ProductCategory) $category = new ProductCategory();
+
+            $category->rs_id = $attributes['id'];
+            $category->name = $attributes['attribute'];
+            $category->save();
+
+            if (!empty($productCategory['ProductCategory'])) {
+                $parentCategoryId = $category->id;
+
+                foreach ($productCategory['ProductCategory'] as $childProductCategory) {
+                    $childAttribute = $childProductCategory['@attributes'];
+                    $childCategory = ProductCategory::where('rs_id', $childAttribute['id'])->first();
+                    if (!$childCategory instanceof ProductCategory) $childCategory = new ProductCategory();
+
+                    $childCategory->rs_id = $childAttribute['id'];
+                    $childCategory->name = $childAttribute['attribute'];
+                    $childCategory->parent_category_id = $parentCategoryId;
+                    $childCategory->save();
+                }
+            }
+        });
+    }
+
+    private function handleSuppliers($catalog)
+    {
         $this->withProgressBar($catalog['Suppliers']['Supplier'], function ($supplierData) {
             $supplierId = $supplierData['@attributes']['id'];
 
@@ -117,43 +158,31 @@ class RetailSystemFullSync extends Command
                             $productObj->name = $productName;
                             $productObj->enabled = $webEnabled;
                             $productObj->save();
+                            dd($product);
+
+                            $this->syncProductCategories($productObj, $product);
                         }
                     }
                 }
             }
         });
-
-
     }
 
-
-    private function handleProductCategories($catalog)
+    private function syncProductCategories(Product $productObj, $productData)
     {
-        $this->withProgressBar($catalog['ProductCategories']['ProductCategory'], function ($productCategory) {
-            $parentCategoryId = null;
-            $attributes = $productCategory['@attributes'];
+        if (isset($productData['IsMemberOf'])) {
+            // Force the format
+            if (isset($productData['IsMemberOf']['@attributes'])) $productData['IsMemberOf'] = [$productData['IsMemberOf']];
 
-            $category = ProductCategory::where('rs_id', $attributes['id'])->first();
-            if (!$category instanceof ProductCategory) $category = new ProductCategory();
-
-            $category->rs_id = $attributes['id'];
-            $category->name = $attributes['attribute'];
-            $category->save();
-
-            if (!empty($productCategory['ProductCategory'])) {
-                $parentCategoryId = $category->id;
-
-                foreach ($productCategory['ProductCategory'] as $childProductCategory) {
-                    $childAttribute = $childProductCategory['@attributes'];
-                    $childCategory = ProductCategory::where('rs_id', $childAttribute['id'])->first();
-                    if (!$childCategory instanceof ProductCategory) $childCategory = new ProductCategory();
-
-                    $childCategory->rs_id = $childAttribute['id'];
-                    $childCategory->name = $childAttribute['attribute'];
-                    $childCategory->parent_category_id = $parentCategoryId;
-                    $childCategory->save();
+            $rsCategoryId = [];
+            foreach ($productData['IsMemberOf'] as $category) {
+                if (isset($category['@attributes'])) {
+                    $categoryObj = ProductCategory::where('rs_id', $category['@attributes']['linkid'])->exists();
+                    if ($categoryObj) $rsCategoryId[] = $category['@attributes']['linkid'];
                 }
             }
-        });
+
+            $productObj->categories()->sync($rsCategoryId);
+        }
     }
 }
