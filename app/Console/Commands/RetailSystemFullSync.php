@@ -2,7 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PivotTables\ProductPriceGroup;
 use App\Models\PivotTables\ProductProperties;
+use App\Models\PriceGroup;
+use App\Models\PriceGroupOptions;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Properties;
@@ -141,6 +144,28 @@ class RetailSystemFullSync extends Command
                 }
             }
 
+            if (isset($supplierData['Brand']['PriceGroup'])) {
+                if (isset($supplierData['Brand']['PriceGroup']['@attributes'])) $supplierData['Brand']['PriceGroup'] = [$supplierData['Brand']['PriceGroup']];
+
+                foreach ($supplierData['Brand']['PriceGroup'] as $priceGroup) {
+                    $priceGroupObj = PriceGroup::where('rs_id', $priceGroup['@attributes']['id'])->first();
+                    if (!$priceGroupObj instanceof PriceGroup) $priceGroupObj = new PriceGroup();
+                    $priceGroupObj->rs_id = $priceGroup['@attributes']['id'];
+                    $priceGroupObj->name = $priceGroup['@attributes']['attribute'];
+                    $priceGroupObj->save();
+
+                    foreach ($priceGroup['Option'] as $option) {
+                        $priceGroupOptionObj = PriceGroupOptions::where('rs_id', $option['@attributes']['id'])->first();
+                        if (!$priceGroupOptionObj instanceof PriceGroupOptions) $priceGroupOptionObj = new PriceGroupOptions();
+                        $priceGroupOptionObj->rs_id = $option['@attributes']['id'];
+                        $priceGroupOptionObj->name = $option['@attributes']['attribute'];
+                        $priceGroupOptionObj->price_group_id = $priceGroupObj->id;
+                        $priceGroupOptionObj->save();
+                    }
+
+                }
+            }
+
             if (!empty($supplierData['Brand']['ProductRange'])) {
                 // If its not a multi-item array then force it to be one.
                 if (isset($supplierData['Brand']['ProductRange']['@attributes'])) $supplierData['Brand']['ProductRange'] = [$supplierData['Brand']['ProductRange']];
@@ -184,6 +209,24 @@ class RetailSystemFullSync extends Command
 
                             $this->syncProductCategories($productObj, $product);
                             $this->syncProductProperties($productObj, $product);
+
+                            if (isset($product['Link'])) {
+                                ProductPriceGroup::where('rs_product_id', $productObj->rs_id)->delete();
+
+                                if (isset($product['Link']['@attributes'])) $product['Link'] = [$product['Link']];
+
+                                foreach ($product['Link'] as $link) {
+                                    $productPriceGroupObj = new ProductPriceGroup();
+
+                                    $productPriceGroupObj->rs_product_id = $productObj->rs_id;
+                                    $productPriceGroupObj->rs_price_group_id = $link['@attributes']['linkid'];
+                                    if (isset($link['Prices']['@attributes'])) {
+                                        $productPriceGroupObj->price = $link['Prices']['@attributes']['price'];
+                                    }
+
+                                    $productPriceGroupObj->save();
+                                }
+                            }
                         }
                     }
                 }

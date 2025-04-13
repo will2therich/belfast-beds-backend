@@ -37,4 +37,9 @@ class PropertyOption extends Model
             'rs_id'
         );
     }
+
+    public function property()
+    {
+        return $this->belongsTo(Properties::class, 'property_id', 'id');
+    }
 }
