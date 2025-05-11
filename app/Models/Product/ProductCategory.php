@@ -13,6 +13,7 @@ class ProductCategory extends Model
     {
         $table->id();
         $table->string('name');
+        $table->string('slug')->nullable();
         $table->string('rs_id')->index();
         $table->integer('parent_category_id')->nullable();
         $table->string('link')->nullable();

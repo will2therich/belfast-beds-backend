@@ -25,6 +25,7 @@ class EcommerceFrontendController
 
             $tempArray['id'] = $category['id'];
             $tempArray['name'] = $category['name'];
+            $tempArray['slug'] = $category['slug'];
             $tempArray['subCategories'] = [];
             $childCategories = [];
 
@@ -51,9 +52,9 @@ class EcommerceFrontendController
         ]);
     }
 
-    public function loadProduct()
+    public function loadProduct($slug)
     {
-        $product = Product::find(2);
+        $product = Product::where('slug', $slug)->firstOrFail();
         $productArray = $product->toArray();
         $properties = [];
         $priceOptionsArr = [];

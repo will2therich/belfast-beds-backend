@@ -13,6 +13,7 @@ use App\Models\PropertyOption;
 use App\Models\Supplier;
 use App\Services\RetailSystemSoapService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 class RetailSystemFullSync extends Command
 {
@@ -63,6 +64,7 @@ class RetailSystemFullSync extends Command
 
             $category->rs_id = $attributes['id'];
             $category->name = $attributes['attribute'];
+            $category->slug = str_replace(' ', '_', strtolower($category->name));
             $category->save();
 
             if (!empty($productCategory['ProductCategory'])) {
@@ -76,6 +78,7 @@ class RetailSystemFullSync extends Command
                     $childCategory->rs_id = $childAttribute['id'];
                     $childCategory->name = $childAttribute['attribute'];
                     $childCategory->parent_category_id = $parentCategoryId;
+                    $childCategory->slug = $category->slug . '_' . str_replace(' ', '_', strtolower($childCategory->name));
                     $childCategory->save();
                 }
             }
@@ -126,10 +129,15 @@ class RetailSystemFullSync extends Command
                         $photos = [];
 
                         if (isset($option['Photo'])) {
-                            if (isset($option['Photo']['@attributes'])) $option['Photo'] = [$option['Photo']];
+                            if (isset($option['Photo']['@attributes'])) $option['Photo'] = [ $option['Photo'] ];
+
                             foreach ($option['Photo'] as $photo) {
-                                $photos[] = $photo['@attributes']['attribute'];
+                                $path = 'options/' . $optionId . '/' . $photo['@attributes']['attribute'];
+//                                $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
+//                                Storage::put('public/' . $path, $photoData);
+                                $photos[] = $path;
                             }
+
                         }
 
                         $propertyValueObj = PropertyOption::where('rs_id', $optionId)->first();
@@ -195,21 +203,33 @@ class RetailSystemFullSync extends Command
                                 if (isset($product['PhotoHiRes']['@attributes'])) $product['PhotoHiRes'] = [$product['PhotoHiRes']];
                                 foreach ($product['PhotoHiRes'] as $photo) {
                                     if (isset($photo['@attributes'])) {
-                                        $photos[] = $photo['@attributes']['attribute'];
+                                        $path = 'products/' . $productId . '/' . $photo['@attributes']['attribute'];
+//                                        $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
+//                                        Storage::put('public/' . $path, $photoData);
+                                        $photos[] = $path;
                                     }
                                 }
                             }
 
 
-                            $productObj->rs_id = $productId;
-                            $productObj->name = $productName;
-                            $productObj->enabled = $webEnabled;
-                            $productObj->photos = $photos;
-                            $productObj->save();
+                            try {
+                                $productObj->rs_id = $productId;
+                                $productObj->name = $productName;
+                                $productObj->enabled = $webEnabled;
+                                $productObj->photos = $photos;
+                                $productObj->brand = $supplier->name;
+                                $productObj->slug = $productId . '_' . str_replace(' ', '_', strtolower($productObj->name));
+                                $productObj->save();
 
-                            $this->syncProductCategories($productObj, $product);
-                            $this->syncProductProperties($productObj, $product);
-                            $startingPrice = null;
+                                $this->syncProductCategories($productObj, $product);
+                                $this->syncProductProperties($productObj, $product);
+                                $startingPrice = null;
+                            } catch (\Exception $e) {
+                                dump($productObj);
+                                continue;
+                            }
+
+
 
                             if (isset($product['Link'])) {
 
