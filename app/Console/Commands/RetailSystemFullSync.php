@@ -211,6 +211,15 @@ class RetailSystemFullSync extends Command
                                 }
                             }
 
+                            $sections = [];
+
+                            if (isset($product['Fields'])) {
+                                foreach ($product['Fields'] as $key => $field) {
+                                    if (isset($field['@attributes']['a'])) {
+                                        $sections[str_replace(' ', '_', strtolower($key))] = $field['@attributes']['a'];
+                                    }
+                                }
+                            }
 
                             try {
                                 $productObj->rs_id = $productId;
@@ -219,6 +228,7 @@ class RetailSystemFullSync extends Command
                                 $productObj->photos = $photos;
                                 $productObj->brand = $supplier->name;
                                 $productObj->slug = $productId . '_' . str_replace(' ', '_', strtolower($productObj->name));
+                                $productObj->sections = $sections;
                                 $productObj->save();
 
                                 $this->syncProductCategories($productObj, $product);
@@ -257,6 +267,14 @@ class RetailSystemFullSync extends Command
                                     }
 
                                     $productPriceGroupObj->save();
+                                }
+                            }
+
+                            if (is_null($startingPrice)) {
+                                if (isset($product['Prices']['@attributes'])) {
+                                    $startingPrice = $product['Prices']['@attributes']['price'];
+                                } else {
+                                    $startingPrice = 0;
                                 }
                             }
 

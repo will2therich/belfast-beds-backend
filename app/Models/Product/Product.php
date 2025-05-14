@@ -12,7 +12,8 @@ class Product extends Model
 
 
     protected $casts = [
-        'pictures' => 'array'
+        'pictures' => 'array',
+        'sections' => 'array'
     ];
 
     public function migration(Blueprint $table)
@@ -25,6 +26,7 @@ class Product extends Model
         $table->longText('photos')->nullable();
         $table->string('brand')->nullable();
         $table->float('starting_price')->nullable();
+        $table->longText('sections')->nullable();
         $table->timestamps();
     }
 
