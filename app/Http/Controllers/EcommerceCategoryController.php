@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
-use App\Models\Properties;
 
 class EcommerceCategoryController
 {
@@ -23,6 +21,7 @@ class EcommerceCategoryController
             $query->whereIn('id', $allCategoryIds);
         })
             ->whereNotNull('starting_price')
+            ->with('brand')
             ->get();
 
 

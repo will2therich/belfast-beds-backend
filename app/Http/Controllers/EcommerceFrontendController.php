@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PriceGroup;
+use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
-use App\Models\Properties;
+use App\Models\Product\Properties;
 
 class EcommerceFrontendController
 {

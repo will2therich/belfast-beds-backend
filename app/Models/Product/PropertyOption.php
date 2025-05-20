@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Product;
 
-use App\Models\Product\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 
