@@ -3,17 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Models\PivotTables\ProductPriceGroup;
-use App\Models\PivotTables\ProductProperties;
-use App\Models\PriceGroup;
-use App\Models\PriceGroupOptions;
+use App\Models\Product\PriceGroup;
+use App\Models\Product\PriceGroupOptions;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
-use App\Models\Properties;
-use App\Models\PropertyOption;
+use App\Models\Product\Properties;
+use App\Models\Product\PropertyOption;
 use App\Models\Supplier;
 use App\Services\RetailSystemSoapService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class RetailSystemFullSync extends Command
 {
@@ -226,7 +224,7 @@ class RetailSystemFullSync extends Command
                                 $productObj->name = $productName;
                                 $productObj->enabled = $webEnabled;
                                 $productObj->photos = $photos;
-                                $productObj->brand = $supplier->name;
+                                $productObj->brand = $supplier->id;
                                 $productObj->slug = $productId . '_' . str_replace(' ', '_', strtolower($productObj->name));
                                 $productObj->sections = $sections;
                                 $productObj->save();
