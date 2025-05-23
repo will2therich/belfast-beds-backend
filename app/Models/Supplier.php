@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 class Supplier extends Model
 {
 
+    protected $guarded = [];
 
     public function migration(Blueprint $table)
     {

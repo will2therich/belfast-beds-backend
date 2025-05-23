@@ -21,6 +21,7 @@ class EcommerceCategoryController
             $query->whereIn('id', $allCategoryIds);
         })
             ->whereNotNull('starting_price')
+            ->whereNotNull('brand')
             ->with('brand')
             ->get();
 
