@@ -6,6 +6,7 @@ use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Product\Properties;
+use App\Models\Supplier;
 
 class EcommerceFrontendController
 {
@@ -45,6 +46,29 @@ class EcommerceFrontendController
 
             $formattedMenu[] = $tempArray;
         }
+
+
+
+        $suppliers = Supplier::where('show_in_menu', true)->get()->toArray();
+
+        if (is_array($suppliers) && count($suppliers) > 0) {
+            $tempArray = [];
+            $tempArray['id'] = 'brand';
+            $tempArray['name'] = 'Brands';
+            $tempArray['slug'] = 'brands';
+            $tempArray['brands'] = [];
+
+            foreach ($suppliers as $supplier) {
+                $tempArray['brands'][] = [
+                    'name' => $supplier['name'],
+                    'image' => '/test',
+                    'slug' => $supplier['slug']
+                ];
+            }
+
+            $formattedMenu[] = $tempArray;
+        }
+
 
         // Return JSON response
         return response()->json([

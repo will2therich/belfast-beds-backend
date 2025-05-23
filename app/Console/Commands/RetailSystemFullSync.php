@@ -95,11 +95,16 @@ class RetailSystemFullSync extends Command
             }
 
             $supplier = Supplier::where('rs_id', $supplierId)->first();
-            if (!$supplier instanceof Supplier) $supplier = new Supplier();
 
-            $supplier->rs_id = $supplierId;
-            $supplier->name = $supplierName;
-            $supplier->save();
+            if (!$supplier instanceof Supplier) {
+                $supplier = new Supplier();
+                $supplier->rs_id = $supplierId;
+                $supplier->name = $supplierName;
+                $supplier->slug = str_replace(' ', '_', strtolower(trim($supplier->name)));
+                $supplier->save();
+            }
+
+
 
             if (!empty($supplierData['Brand']['OptionGroup'])) {
                 // If its not a multi-item array then force it to be one.
