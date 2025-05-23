@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\StringHelper;
 use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
@@ -22,6 +23,7 @@ class EcommerceFrontendController
         $formattedMenu = [];
 
         foreach ($categories as $category) {
+            $categoryObj = ProductCategory::find($category['id']);
             $tempArray = [];
 
             $tempArray['id'] = $category['id'];
@@ -38,16 +40,32 @@ class EcommerceFrontendController
 
             // By Type Filter
             if (isset($category['child_categories'])) {
-                $tempArray['subCategories'] = [
+                $tempArray['subCategories'][] = [
                     'name' => 'By Type',
                     'subCategories' => $childCategories
                 ];
             }
 
+            $additionalFilters = $categoryObj->filters()->get();
+
+            foreach ($additionalFilters as $filter) {
+                $filterArr = [
+                    'name' => $filter->name,
+                    'subCategories' => []
+                ];
+
+                foreach ($filter->options as $option) {
+                    $filterArr['subCategories'][] = [
+                        'name' => str_replace('{{ category }}', $category['name'], $option['label']),
+                        'slug' => $category['slug'] . '?' . $filter->name . '=' . StringHelper::generateSlug($option['search'])
+                    ];
+                }
+
+                $tempArray['subCategories'][] = $filterArr;
+            }
+
             $formattedMenu[] = $tempArray;
         }
-
-
 
         $suppliers = Supplier::where('show_in_menu', true)->get()->toArray();
 

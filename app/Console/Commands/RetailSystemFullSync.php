@@ -58,11 +58,14 @@ class RetailSystemFullSync extends Command
             $attributes = $productCategory['@attributes'];
 
             $category = ProductCategory::where('rs_id', $attributes['id'])->first();
-            if (!$category instanceof ProductCategory) $category = new ProductCategory();
 
-            $category->rs_id = $attributes['id'];
+            if (!$category instanceof ProductCategory) {
+                $category = new ProductCategory();
+                $category->slug = str_replace(' ', '_', strtolower($category->name));
+                $category->rs_id = $attributes['id'];
+            }
+
             $category->name = $attributes['attribute'];
-            $category->slug = str_replace(' ', '_', strtolower($category->name));
             $category->save();
 
             if (!empty($productCategory['ProductCategory'])) {
@@ -71,12 +74,15 @@ class RetailSystemFullSync extends Command
                 foreach ($productCategory['ProductCategory'] as $childProductCategory) {
                     $childAttribute = $childProductCategory['@attributes'];
                     $childCategory = ProductCategory::where('rs_id', $childAttribute['id'])->first();
-                    if (!$childCategory instanceof ProductCategory) $childCategory = new ProductCategory();
 
-                    $childCategory->rs_id = $childAttribute['id'];
+                    if (!$childCategory instanceof ProductCategory)  {
+                        $childCategory = new ProductCategory();
+                        $childCategory->slug = $category->slug . '_' . str_replace(' ', '_', strtolower($childCategory->name));
+                        $childCategory->rs_id = $childAttribute['id'];
+                    }
+
                     $childCategory->name = $childAttribute['attribute'];
                     $childCategory->parent_category_id = $parentCategoryId;
-                    $childCategory->slug = $category->slug . '_' . str_replace(' ', '_', strtolower($childCategory->name));
                     $childCategory->save();
                 }
             }

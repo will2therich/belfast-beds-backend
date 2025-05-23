@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 class ProductCategory extends Model
 {
 
+    protected $guarded = [];
 
     public function migration(Blueprint $table)
     {
@@ -51,5 +52,10 @@ class ProductCategory extends Model
     public function childCategories()
     {
         return $this->hasMany(self::class, 'parent_category_id');
+    }
+
+    public function filters()
+    {
+        return CategoryFilters::query()->whereJsonContains('categories', '' . $this->id);
     }
 }
