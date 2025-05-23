@@ -15,12 +15,7 @@ class CartController
     {
 
         $cart = $cartService->loadCart();
-        $lineItems = $cart->lineItems;
-
-
-        foreach ($lineItems as $lineItem) {
-            $prod = $lineItem->product;
-        }
+        $cart->line_items = $cart->lineItems()->with('product')->get();
 
         $cookie = new Cookie(
             'belfast-beds-cart-token',
