@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'https://your-vue-frontend-domain.com'],
+    'allowed_origins' => ['http://localhost:5173', 'https://assets-bb.weblabs.dev', 'https://bb.weblabs.dev'],
 
     'allowed_origins_patterns' => [],
 

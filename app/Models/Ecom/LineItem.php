@@ -2,6 +2,7 @@
 
 namespace App\Models\Ecom;
 
+use App\Models\Product\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Schema\Blueprint;
@@ -35,6 +36,11 @@ class LineItem extends Model
     public function carts(): BelongsToMany
     {
         return $this->belongsToMany(Cart::class)->withTimestamps();
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 
 }
