@@ -19,6 +19,10 @@ Route::post('/checkout/update', [\App\Http\Controllers\CheckoutController::class
 
 Route::get('/search', [\App\Http\Controllers\EcommerceCategoryController::class, 'searchProducts']);
 
+Route::post('/login', [\App\Http\Controllers\AuthenticationController::class, 'login']);
+Route::post('/register', [\App\Http\Controllers\AuthenticationController::class, 'register']);
+Route::get('/me', [\App\Http\Controllers\AuthenticationController::class, 'me']);
+
 
 Route::get('/cart', [\App\Http\Controllers\CartController::class, 'loadCart']);
 Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'addToCart']);

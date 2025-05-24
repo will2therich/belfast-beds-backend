@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'vue' => [
+            'driver' => 'jwt',
+            'provider' => 'customers'
+        ]
     ],
 
     /*
@@ -64,6 +68,10 @@ return [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
+        'customers' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\Ecom\Customer::class
+        ]
 
         // 'users' => [
         //     'driver' => 'database',
