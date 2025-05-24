@@ -13,6 +13,10 @@ Route::get('/category/{slug}', [\App\Http\Controllers\EcommerceCategoryControlle
 Route::get('/collection/{slug}', [\App\Http\Controllers\EcommerceCategoryController::class, 'loadCollection']);
 Route::get('/brand/{slug}', [\App\Http\Controllers\EcommerceCategoryController::class, 'loadBrand']);
 
+
+Route::get('/payment/intent', [\App\Http\Controllers\CheckoutController::class, 'getPaymentIntentForCart']);
+Route::post('/checkout/update', [\App\Http\Controllers\CheckoutController::class, 'updateCheckout']);
+
 Route::get('/search', [\App\Http\Controllers\EcommerceCategoryController::class, 'searchProducts']);
 
 
