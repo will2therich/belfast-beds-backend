@@ -6,6 +6,7 @@ use App\Filament\Resources\Product\ProductCategoryResource\Pages;
 use App\Filament\Resources\Product\ProductCategoryResource\RelationManagers;
 use App\Models\Product\ProductCategory;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -31,6 +32,10 @@ class ProductCategoryResource extends Resource
                         Forms\Components\TextInput::make('slug'),
                         Forms\Components\Toggle::make('enabled')
                             ->inline(false),
+                        FileUpload::make('image')
+                            ->image()
+                            ->directory('product_categories')
+                            ->imageEditor(),
                     ])
             ]);
     }
@@ -41,8 +46,10 @@ class ProductCategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('rs_id')
                     ->label('ID'),
-                Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\TextColumn::make('slug'),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('slug')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('parentCategory.name'),
                 Tables\Columns\TextColumn::make('enabled')
             ])

@@ -6,7 +6,9 @@ use App\Filament\Resources\Ecom;
 use App\Filament\Resources\Ecom\SupplierResource\Pages;
 use App\Filament\Resources\Ecom\SupplierResource\RelationManagers;
 use App\Models\Supplier;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -31,7 +33,19 @@ class SupplierResource extends Resource
                         TextInput::make('name'),
                         Placeholder::make('rs_id')
                             ->label('Retail System ID')
-                            ->content(fn (Supplier $record): string => $record->rs_id)
+                            ->content(fn (Supplier $record): string => $record->rs_id),
+                        FileUpload::make('image')
+                            ->image()
+                            ->directory('suppliers')
+                            ->imageEditor(),
+                        FileUpload::make('banner_image')
+                            ->image()
+                            ->directory('suppliers')
+                            ->imageEditor(),
+                        RichEditor::make('description')
+                            ->hint('Shows on the brand page as a description about the brand')
+                            ->columnSpan(2)
+                            ->fileAttachmentsDirectory('suppliers/descriptions')
                     ])
             ]);
     }

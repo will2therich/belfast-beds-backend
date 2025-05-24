@@ -14,8 +14,11 @@ class Supplier extends Model
     {
         $table->id();
         $table->string('name');
-        $table->string('slug')->nullable();
+        $table->string('slug')->nullable()->index();
         $table->boolean('show_in_menu')->default(true);
+        $table->longText('description')->nullable();
+        $table->string('image')->nullable();
+        $table->string('banner_image')->nullable();
         $table->string('rs_id')->index();
         $table->timestamps();
     }

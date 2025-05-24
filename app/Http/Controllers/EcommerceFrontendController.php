@@ -79,7 +79,7 @@ class EcommerceFrontendController
             foreach ($suppliers as $supplier) {
                 $tempArray['brands'][] = [
                     'name' => $supplier['name'],
-                    'image' => '/test',
+                    'image' => $supplier['image'],
                     'slug' => $supplier['slug']
                 ];
             }
@@ -97,14 +97,17 @@ class EcommerceFrontendController
     public function loadProduct($slug)
     {
         $product = Product::where('slug', $slug)->firstOrFail();
+        $brand = $product->brand()->first();
+        $category = $product->categories()->first();
         $productArray = $product->toArray();
+        $productArray['brand'] = $brand->name;
+        $productArray['category'] = $category->name;
+        $productArray['category_slug'] = $category->slug;
         $properties = [];
         $priceOptionsArr = [];
 
-
         $options = $product->options;
         $priceOptions = $product->priceOptions()->orderBy('price')->get();
-
 
         foreach ($priceOptions as $priceOption) {
             if (!isset($priceOptionsArr[$priceOption->price_group_id])) {
