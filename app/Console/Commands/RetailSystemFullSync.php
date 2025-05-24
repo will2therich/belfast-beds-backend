@@ -12,6 +12,7 @@ use App\Models\Product\PropertyOption;
 use App\Models\Supplier;
 use App\Services\RetailSystemSoapService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 class RetailSystemFullSync extends Command
 {
@@ -142,20 +143,45 @@ class RetailSystemFullSync extends Command
 
                             foreach ($option['Photo'] as $photo) {
                                 $path = 'options/' . $optionId . '/' . $photo['@attributes']['attribute'];
-//                                $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
-//                                Storage::put('public/' . $path, $photoData);
+
+//                                if (!file_exists($path)) {
+//                                    $this->info('Storing New Image: ' . $photo['@attributes']['attribute']);
+//                                    $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'), -12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
+//                                    Storage::put('public/' . $path, $photoData);
+//                                }
+
                                 $photos[] = $path;
                             }
+                        } elseif (isset($option['PhotoHiRes'])) {
+                            if (isset($option['PhotoHiRes']['@attributes'])) $option['PhotoHiRes'] = [ $option['PhotoHiRes'] ];
 
+                            foreach ($option['PhotoHiRes'] as $photo) {
+                                $path = 'options/' . $optionId . '/' . $photo['@attributes']['attribute'];
+
+                                if (!file_exists($path)) {
+//                                    $this->info('Storing New Image: ' . $photo['@attributes']['attribute']);
+//                                    $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
+//                                    Storage::put('public/' . $path, $photoData);
+                                }
+
+                                $photos[] = $path;
+                            }
                         }
 
                         $propertyValueObj = PropertyOption::where('rs_id', $optionId)->first();
-                        if (!$propertyValueObj instanceof PropertyOption) $propertyValueObj = new PropertyOption();
+                        if (!$propertyValueObj instanceof PropertyOption)  {
+                            $propertyValueObj = new PropertyOption();
+                            $propertyValueObj->photos = $photos;
+                        }
+
+                        // If there are no photos for RS sync then do not override the existing items.
+                        if (!empty($photos)) {
+                            $propertyValueObj->photos = $photos;
+                        }
 
                         $propertyValueObj->rs_id = $optionId;
                         $propertyValueObj->name = $optionName;
                         $propertyValueObj->property_id = $propertyObj->id;
-                        $propertyValueObj->photos = $photos;
                         $propertyValueObj->save();
                     }
                 }
@@ -198,6 +224,7 @@ class RetailSystemFullSync extends Command
                         foreach ($productRange['Product'] as $product) {
                             $productId = $product['@attributes']['id'];
                             $productName = $product['@attributes']['attribute'];
+
                             $webEnabled = false;
 
                             if (isset($product['@attributes']['webenabled'])) {
@@ -244,7 +271,7 @@ class RetailSystemFullSync extends Command
                                 $this->syncProductProperties($productObj, $product);
                                 $startingPrice = null;
                             } catch (\Exception $e) {
-                                dump($productObj);
+                                dump($e->getMessage());
                                 continue;
                             }
 
@@ -325,6 +352,22 @@ class RetailSystemFullSync extends Command
 
                 if ($exists) {
                     $propertyOptions[] = $optionLink['@attributes']['linkid'];
+                }
+            }
+
+            $productObj->options()->sync($propertyOptions);
+        } elseif (isset($productData['OptionGroupLink'])) {
+            if (isset($productData['OptionGroupLink']['@attributes'])) $productData['OptionGroupLink'] = [$productData['OptionGroupLink']];
+            $propertyOptions = [];
+
+            foreach ($productData['OptionGroupLink'] as $groupLink) {
+                $property = Properties::where('rs_id', $groupLink['@attributes']['linkid'])->first();
+
+                if ($property instanceof Properties) {
+                    $propertyOptions = array_merge(
+                        $propertyOptions,
+                        PropertyOption::where('property_id', $property->id)->get()->pluck('rs_id')->toArray()
+                    );
                 }
             }
 
