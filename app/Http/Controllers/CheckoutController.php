@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Ecom\Address;
 use App\Models\Ecom\Cart;
+use App\Models\Ecom\Order;
+use App\Models\Ecom\Transactions;
 use App\Services\CartService;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
@@ -59,11 +63,12 @@ class CheckoutController
 
     public function getPaymentIntentForCart(CartService $cartService)
     {
-        $cart = $cartService->loadCart();
+        $cart = $cartService->updateCartValue();
         $stripe = new StripeClient(env('STRIPE_SECRET_KEY'));
 
+
         $paymentIntent = $stripe->paymentIntents->create([
-            'amount' => 2000,
+            'amount' => $cart->value,
             'currency' => 'gbp',
             'automatic_payment_methods' => ['enabled' => true],
         ]);
@@ -80,7 +85,6 @@ class CheckoutController
         $paymentIntentId = $request->query('payment_intent');
         $cart = Cart::findOrFail($request->cartId);
 
-        dd($request->all(),$cart);
 
         if (!$paymentIntentId) {
             Log::error('Stripe Return: Missing Payment Intent ID.');
@@ -92,23 +96,44 @@ class CheckoutController
             $paymentIntent = $stripe->paymentIntents->retrieve($paymentIntentId);
             Log::info('Retrieved PaymentIntent from Stripe:', ['id' => $paymentIntent->id, 'status' => $paymentIntent->status]);
 
-
             // Handle different PaymentIntent statuses
             switch ($paymentIntent->status) {
                 case 'succeeded':
                     Log::info('PaymentIntent Succeeded:', ['id' => $paymentIntent->id]);
                     // ACTUALLY HANDLE ORDER
 
+                    $order = new Order();
+                    $order->uuid = Str::uuid();
+                    $order->customer_id = $cart->customer_id;
+                    $order->email = $cart->email;
+                    $order->full_name = $cart->full_name;
+                    $order->telephone = $cart->telephone;
+                    $order->shipping_address_id = $cart->shipping_address_id;
+                    $order->billing_address_id = $cart->billing_address_id;
+                    $order->value = $cart->value;
+                    $order->save();
+
+                    foreach ($cart->lineItems as $lineItem) {
+                        $order->lineItems()->attach($lineItem->id);
+                    }
+
+                    $cart->ordered = true;
+                    $cart->save();
+
+                    $transaction = new Transactions();
+                    $transaction->order_id = $order->id;
+                    $transaction->transaction_id = $order->transaction_id = $paymentIntent->id;
+                    $transaction->value = $cart->value;
+                    $transaction->save();
+
 
                     // 4. Redirect to your frontend order confirmation page with a unique token/ID
-                    $mockOrderToken = 'mock_order_token_' . $paymentIntent->id; // Replace with real token
-                    $frontendSuccessUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/order-confirmation?token=' . $mockOrderToken;
+                    $frontendSuccessUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/order-confirmation?uuid=' . $order->uuid;
                     Log::info('Redirecting to success URL:', ['url' => $frontendSuccessUrl]);
                     return Redirect::to($frontendSuccessUrl);
 
                 default:
                     Log::warning('Unhandled PaymentIntent Status:', ['id' => $paymentIntent->id, 'status' => $paymentIntent->status]);
-                    // Handle other statuses as needed
                     $frontendFailureUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/checkout?error=unexpected_status&status=' . $paymentIntent->status;
                     return Redirect::to($frontendFailureUrl);
             }
@@ -119,6 +144,49 @@ class CheckoutController
             Log::error('Generic Error on Stripe return:', ['message' => $e->getMessage(), 'payment_intent_id' => $paymentIntentId]);
             return Redirect::to(env('FRONTEND_URL', 'http://localhost:5173') . '/checkout?error=server_error');
         }
+    }
+
+    public function postcodeLookup($postcode)
+    {
+        $client = new Client();
+        $postcode = str_replace(' ', '', strtoupper($postcode));
+        $response = $client->get("https://api.getaddress.io/find/$postcode?api-key=DxE9REHsnkeKGam5TICO_w32367");
+
+        $responseArr = [];
+        try {
+            if ($response->getStatusCode() == 200) {
+                $body = json_decode($response->getBody()->getContents(), 1);
+                if (isset($body['addresses'])) {
+                    foreach ($body['addresses'] as $address) {
+                        $addressParts = explode(',', $address);
+                        foreach ($addressParts as $key => $part) if (empty(trim($part))) unset($addressParts[$key]);
+                        $town = trim($addressParts[4]);
+
+                        if (!empty($addressParts[5])) $town .= ', ' . trim($addressParts[5]);
+
+                        $tempArr = [
+                            'id' => uniqid(),
+                            'text' => implode(',', $addressParts),
+                            'details' => [
+                                'addressLine1' => $addressParts[0],
+                                'addressLine2' => trim($addressParts[1]),
+                                'townCity' => $town,
+                                'county' => trim($addressParts[6]),
+                                'postcode' => $postcode,
+                            ]
+                        ];
+
+                        $responseArr[] = $tempArr;
+
+                    }
+                }
+
+            }
+        } catch (\Exception $e) {
+            Log::error('Error on postcode lookup:', ['message' => $e->getMessage(), 'postcode' => $postcode]);
+        }
+
+        return response()->json($responseArr);
     }
 
     private function createOrUpdateAddress(Address $address, $data)

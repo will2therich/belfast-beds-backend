@@ -17,7 +17,7 @@ class CartService
 
         if ($request->hasCookie('belfast-beds-cart-token')) {
             $uuid = $request->cookie('belfast-beds-cart-token');
-            $cartLookup = Cart::where('uuid', $uuid)->first();
+            $cartLookup = Cart::where('uuid', $uuid)->where('ordered', false)->first();
 
             if ($cartLookup instanceof Cart) {
                 return $cartLookup;
@@ -27,7 +27,21 @@ class CartService
         }
 
         return $this->createCart();
+    }
 
+    public function updateCartValue(Cart $cart = null)
+    {
+        if ($cart == null) $cart = $this->loadCart();
+        $value = 0;
+
+        foreach ($cart->lineItems as $lineItem) {
+            $value += (float) $lineItem->price * (int) $lineItem->quantity;
+        }
+
+        $cart->value = $value;
+        $cart->save();
+
+        return $cart;
     }
 
     public function calculatePriceForItem($itemData)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ecom\Cart;
 use App\Models\Ecom\LineItem;
 use App\Services\CartService;
 use Illuminate\Http\Request;
@@ -14,8 +15,15 @@ class CartController
     public function loadCart(CartService $cartService)
     {
 
-        $cart = $cartService->loadCart();
-        $cart->line_items = $cart->lineItems()->with('product')->get();
+        $cart = $cartService->updateCartValue();
+        $lineItems = $cart->lineItems()->with('product')->get();
+
+        $responseArr = $cart->toArray();
+        foreach ($lineItems as $lineItem) {
+            $lineItem->product;
+        }
+
+        $responseArr['line_items'] = $lineItems->toArray();
 
         $cookie = new Cookie(
             'belfast-beds-cart-token',
@@ -33,8 +41,19 @@ class CartController
 
 
         return response()
-            ->json($cart)
+            ->json($responseArr)
             ->withCookie($cookie);
+    }
+
+    public function updateQuantity(CartService $cartService, $lineItemId, $quantity)
+    {
+        $lineItem = LineItem::find($lineItemId);
+
+        if ($lineItem instanceof LineItem) {
+            $lineItem->quantity = $quantity;
+        }
+
+        return $cartService->updateCartValue();
     }
 
     public function addToCart(CartService $cartService, Request $request)
@@ -56,6 +75,7 @@ class CartController
         $lineItem->save();
 
         $cart->lineItems()->attach($lineItem->id);
+
 
         return $this->loadCart($cartService);
 

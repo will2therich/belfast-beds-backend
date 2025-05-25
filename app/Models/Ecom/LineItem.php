@@ -38,6 +38,16 @@ class LineItem extends Model
         return $this->belongsToMany(Cart::class)->withTimestamps();
     }
 
+    /**
+     * Get the carts that contain this line item.
+     *
+     * @return BelongsToMany
+     */
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class)->withTimestamps();
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);
