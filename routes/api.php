@@ -19,6 +19,7 @@ Route::get('/brand/{slug}', [\App\Http\Controllers\EcommerceCategoryController::
 Route::post('/checkout/update', [\App\Http\Controllers\CheckoutController::class, 'updateCheckout']);
 Route::get('/payment/intent', [\App\Http\Controllers\CheckoutController::class, 'getPaymentIntentForCart']);
 Route::get('/stripe/process', [\App\Http\Controllers\CheckoutController::class, 'handleStripeReturn']);
+Route::get('/postcode/{postcode}', [\App\Http\Controllers\CheckoutController::class, 'postcodeLookup']);
 
 Route::get('/search', [\App\Http\Controllers\EcommerceCategoryController::class, 'searchProducts']);
 
@@ -29,3 +30,4 @@ Route::get('/me', [\App\Http\Controllers\AuthenticationController::class, 'me'])
 
 Route::get('/cart', [\App\Http\Controllers\CartController::class, 'loadCart']);
 Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'addToCart']);
+Route::post('/cart/quantity/{lineItemId}/{quantity}', [\App\Http\Controllers\CartController::class, 'updateQuantity']);
