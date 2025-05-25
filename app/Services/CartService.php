@@ -39,7 +39,7 @@ class CartService
 
             if ($selection['fieldType'] == 'PriceGroup') {
                 $priceGroupLookup = ProductPriceGroup::query()
-                    ->where('rs_price_group_option_id', $selection['selectedValue'])
+                    ->where('rs_price_group_option_id', $selection['selectedValueId'])
                     ->where('rs_product_id', $itemData['rsId'])
                     ->first();
 
