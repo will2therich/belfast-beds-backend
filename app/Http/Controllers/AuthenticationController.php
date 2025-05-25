@@ -88,6 +88,9 @@ class AuthenticationController
             unset($user['password']);
             return response()->json($user);
         }
+
+
+        return response()->json([], 401);
     }
 
 }

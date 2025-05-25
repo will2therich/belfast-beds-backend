@@ -3,8 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ecom\Address;
+use App\Models\Ecom\Cart;
 use App\Services\CartService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redirect;
+use Stripe\Exception\ApiErrorException;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 
 class CheckoutController
@@ -67,6 +72,69 @@ class CheckoutController
         return response()->json([
             'payment_intent' => $paymentIntent->toArray()['client_secret']
         ]);
+    }
+
+    public function handleStripeReturn(Request $request)
+    {
+        Log::info('Stripe Return URL hit with query params:', $request->query());
+        $stripe = new StripeClient(env('STRIPE_SECRET_KEY'));
+        $paymentIntentId = $request->query('payment_intent');
+        $cart = Cart::findOrFail($request->cartId);
+
+        dd($request->all(),$cart);
+
+        if (!$paymentIntentId) {
+            Log::error('Stripe Return: Missing Payment Intent ID.');
+            return Redirect::to(env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?error=payment_intent_missing');
+        }
+
+        try {
+            // Retrieve the PaymentIntent from Stripe to get its authoritative status
+            $paymentIntent = $stripe->paymentIntents->retrieve($paymentIntentId);
+            Log::info('Retrieved PaymentIntent from Stripe:', ['id' => $paymentIntent->id, 'status' => $paymentIntent->status]);
+
+
+            // Handle different PaymentIntent statuses
+            switch ($paymentIntent->status) {
+                case 'succeeded':
+                    Log::info('PaymentIntent Succeeded:', ['id' => $paymentIntent->id]);
+                    // ACTUALLY HANDLE ORDER
+
+                    // 3. Send confirmation emails, etc.
+
+                    // 4. Redirect to your frontend order confirmation page with a unique token/ID
+                    $mockOrderToken = 'mock_order_token_' . $paymentIntent->id; // Replace with real token
+                    $frontendSuccessUrl = env('FRONTEND_URL', 'http://localhost:8080') . '/order-confirmation?token=' . $mockOrderToken;
+                    Log::info('Redirecting to success URL:', ['url' => $frontendSuccessUrl]);
+                    return Redirect::to($frontendSuccessUrl);
+
+                case 'processing':
+                    Log::info('PaymentIntent Processing:', ['id' => $paymentIntent->id]);
+                    // Optionally redirect to a page indicating payment is processing
+                    $frontendProcessingUrl = env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?status=processing&pi_id=' . $paymentIntent->id;
+                    return Redirect::to($frontendProcessingUrl);
+
+                case 'requires_payment_method':
+                    Log::warning('PaymentIntent Requires Payment Method:', ['id' => $paymentIntent->id, 'last_error' => $paymentIntent->last_payment_error ? $paymentIntent->last_payment_error->message : 'No specific error.']);
+                    // Payment failed, redirect back to checkout with an error
+                    $frontendFailureUrl = env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?error=payment_failed&message=' . urlencode($paymentIntent->last_payment_error ? $paymentIntent->last_payment_error->message : 'Payment method declined.');
+                    return Redirect::to($frontendFailureUrl);
+
+                default:
+                    Log::warning('Unhandled PaymentIntent Status:', ['id' => $paymentIntent->id, 'status' => $paymentIntent->status]);
+                    // Handle other statuses as needed
+                    $frontendFailureUrl = env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?error=unexpected_status&status=' . $paymentIntent->status;
+                    return Redirect::to($frontendFailureUrl);
+            }
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe API Error on return:', ['message' => $e->getMessage(), 'payment_intent_id' => $paymentIntentId]);
+            // Handle API errors (e.g., invalid PaymentIntent ID)
+            return Redirect::to(env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?error=stripe_api_error&message=' . urlencode($e->getMessage()));
+        } catch (\Exception $e) {
+            Log::error('Generic Error on Stripe return:', ['message' => $e->getMessage(), 'payment_intent_id' => $paymentIntentId]);
+            // Handle other unexpected errors
+            return Redirect::to(env('FRONTEND_URL', 'http://localhost:8080') . '/checkout?error=server_error');
+        }
     }
 
     private function createOrUpdateAddress(Address $address, $data)
