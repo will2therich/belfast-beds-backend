@@ -61,6 +61,21 @@ class Product extends Model
         );
     }
 
+    /**
+     * The categories that a product belongs to.
+     */
+    public function addons()
+    {
+        return $this->belongsToMany(
+            AddOnOptions::class,
+            'product_add_ons',
+            'rs_product_id',
+            'rs_addon_option_id',
+            'rs_id',
+            'rs_id'
+        );
+    }
+
     public function priceOptions()
     {
         return $this->hasMany(ProductPriceGroup::class, 'rs_product_id', 'rs_id');

@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\PivotTables\ProductPriceGroup;
+use App\Models\Product\AddOn;
+use App\Models\Product\AddOnOptions;
 use App\Models\Product\PriceGroup;
 use App\Models\Product\PriceGroupOptions;
 use App\Models\Product\Product;
@@ -143,12 +145,7 @@ class RetailSystemFullSync extends Command
 
                             foreach ($option['Photo'] as $photo) {
                                 $path = 'options/' . $optionId . '/' . $photo['@attributes']['attribute'];
-
-//                                if (!file_exists($path)) {
-//                                    $this->info('Storing New Image: ' . $photo['@attributes']['attribute']);
-//                                    $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'), -12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
-//                                    Storage::put('public/' . $path, $photoData);
-//                                }
+                                $this->saveImage($photo['@attributes']['id'], $photo['@attributes']['attribute'], $path);
 
                                 $photos[] = $path;
                             }
@@ -158,12 +155,7 @@ class RetailSystemFullSync extends Command
                             foreach ($option['PhotoHiRes'] as $photo) {
                                 $path = 'options/' . $optionId . '/' . $photo['@attributes']['attribute'];
 
-                                if (!file_exists($path)) {
-//                                    $this->info('Storing New Image: ' . $photo['@attributes']['attribute']);
-//                                    $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
-//                                    Storage::put('public/' . $path, $photoData);
-                                }
-
+                                $this->saveImage($photo['@attributes']['id'], $photo['@attributes']['attribute'], $path);
                                 $photos[] = $path;
                             }
                         }
@@ -209,6 +201,44 @@ class RetailSystemFullSync extends Command
                 }
             }
 
+
+            if (isset($supplierData['Brand']['OptionGroupAddOn'])) {
+                if (isset($supplierData['Brand']['OptionGroupAddOn']['@attributes'])) $supplierData['Brand']['OptionGroupAddOn'] = [$supplierData['Brand']['OptionGroupAddOn']];
+
+                foreach ($supplierData['Brand']['OptionGroupAddOn'] as $addonGroup) {
+                    $addonGroupObj = AddOn::where('rs_id', $addonGroup['@attributes']['id'])->first();
+                    if (!$addonGroupObj instanceof AddOn) $addonGroupObj = new AddOn();
+                    $addonGroupObj->rs_id = $addonGroup['@attributes']['id'];
+                    $addonGroupObj->name = $addonGroup['@attributes']['attribute'];
+                    $addonGroupObj->save();
+
+                    foreach ($addonGroup['OptionAddOn'] as $option) {
+                        $optionObj = AddOnOptions::where('rs_id', $option['@attributes']['id'])->first();
+                        if (!$optionObj instanceof AddOnOptions) $optionObj = new AddOnOptions();
+                        $optionObj->rs_id = $option['@attributes']['id'];
+                        $optionObj->name = $option['@attributes']['attribute'];
+                        $optionObj->add_on_id = $addonGroupObj->id;
+
+                        if (isset($option['Prices']['@attributes'])) {
+                            $optionObj->price = (float)$option['Prices']['@attributes']['price'];
+                        }
+
+                        if (isset($option['PhotoHiRes']['@attributes'])) {
+                            $path = 'addon/' . $addonGroupObj->id . '/' . $option['PhotoHiRes']['@attributes']['attribute'];
+                            $this->saveImage(
+                                $option['PhotoHiRes']['@attributes']['id'],
+                                $option['PhotoHiRes']['@attributes']['attribute'],
+                                $path
+                            );
+
+                            $optionObj->image = $path;
+                        }
+
+                        $optionObj->save();
+                    }
+                }
+            }
+
             if (!empty($supplierData['Brand']['ProductRange'])) {
                 // If its not a multi-item array then force it to be one.
                 if (isset($supplierData['Brand']['ProductRange']['@attributes'])) $supplierData['Brand']['ProductRange'] = [$supplierData['Brand']['ProductRange']];
@@ -240,8 +270,7 @@ class RetailSystemFullSync extends Command
                                 foreach ($product['PhotoHiRes'] as $photo) {
                                     if (isset($photo['@attributes'])) {
                                         $path = 'products/' . $productId . '/' . $photo['@attributes']['attribute'];
-//                                        $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'),-12)) . '/' . $photo['@attributes']['id'] . '/' . urlencode($photo['@attributes']['attribute']));
-//                                        Storage::put('public/' . $path, $photoData);
+                                        $this->saveImage($photo['@attributes']['id'], $photo['@attributes']['attribute'], $path);
                                         $photos[] = $path;
                                     }
                                 }
@@ -269,13 +298,12 @@ class RetailSystemFullSync extends Command
 
                                 $this->syncProductCategories($productObj, $product);
                                 $this->syncProductProperties($productObj, $product);
+                                $this->syncProductAddons($productObj, $product);
                                 $startingPrice = null;
                             } catch (\Exception $e) {
                                 dump($e->getMessage());
                                 continue;
                             }
-
-
 
                             if (isset($product['Link'])) {
 
@@ -341,6 +369,21 @@ class RetailSystemFullSync extends Command
         }
     }
 
+    private function syncProductAddons(Product $productObj, $productData) {
+        if (isset($productData['AddOnLink'])) {
+            if (isset($productData['AddOnLink']['@attributes'])) $productData['AddOnLink'] = [$productData['AddOnLink']];
+
+            $addonOptionsId = [];
+            foreach ($productData['AddOnLink'] as $addon) {
+                if (isset($addon['@attributes'])) {
+                    $addonOptionsId[] = $addon['@attributes']['linkid'];
+                }
+            }
+
+            $productObj->addons()->sync($addonOptionsId);
+        }
+    }
+
     private function syncProductProperties(Product $productObj, $productData)
     {
         if (isset($productData['OptionLink'])) {
@@ -374,5 +417,13 @@ class RetailSystemFullSync extends Command
             $productObj->options()->sync($propertyOptions);
         }
 
+    }
+
+    private function saveImage($id, $name, $path) {
+        if (!Storage::exists('public/' . $path)) {
+            $this->info('Saving New Image: ' . $name);
+            $photoData = file_get_contents('https://retailsystem.s3-eu-west-1.amazonaws.com/' . strtoupper(substr(env('RS_GUID'), -12)) . '/' . $id . '/' . urlencode($name));
+            Storage::put('public/' . $path, $photoData);
+        }
     }
 }

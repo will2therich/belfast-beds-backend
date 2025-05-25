@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helper\StringHelper;
 use App\Models\Core\Pages;
+use App\Models\Product\AddOn;
 use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
@@ -104,6 +105,7 @@ class EcommerceFrontendController
         $priceOptionsArr = [];
 
         $options = $product->options;
+        $addons = $product->addons;
         $priceOptions = $product->priceOptions()->orderBy('price')->get();
 
         foreach ($priceOptions as $priceOption) {
@@ -126,11 +128,11 @@ class EcommerceFrontendController
 
 
         foreach  ($options as $option) {
-            if (!isset($properties[$option->property_id])) {
+            if (!isset($properties['property_' . $option->property_id])) {
                 $propertyObj = Properties::find($option->property_id);
 
                 if ($propertyObj instanceof Properties) {
-                    $properties[$option->property_id] = [
+                    $properties['property_' . $option->property_id] = [
                         'id' => $propertyObj->id,
                         'rs_id' => $propertyObj->rs_id,
                         'name' => $propertyObj->name,
@@ -140,11 +142,29 @@ class EcommerceFrontendController
                 }
             }
 
-            $properties[$option->property_id]['values'][] = $option->toArray();
-
+            $properties['property_' . $option->property_id]['values'][] = $option->toArray();
         }
 
-        $productArray['fields'] = array_merge($priceOptionsArr, $properties);
+        foreach  ($addons as $addon) {
+            if (!isset($properties['addon_' . $addon->add_on_id])) {
+                $addonObj = AddOn::find($addon->add_on_id);
+
+                if ($addonObj instanceof AddOn) {
+                    $properties['addon_' . $addon->add_on_id] = [
+                        'id' => $addonObj->id,
+                        'rs_id' => $addonObj->rs_id,
+                        'name' => $addonObj->name,
+                        'type' => 'Addon',
+                        'values' => []
+                    ];
+                }
+            }
+
+            $properties['addon_' . $addon->add_on_id]['values'][] = $addon->toArray();
+        }
+
+        $productArray['fields'] = array_values(array_merge($priceOptionsArr, $properties));
+
 
         return response()->json($productArray);
     }
