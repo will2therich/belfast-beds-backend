@@ -21,6 +21,8 @@ Route::get('/payment/intent', [\App\Http\Controllers\CheckoutController::class, 
 Route::get('/stripe/process', [\App\Http\Controllers\CheckoutController::class, 'handleStripeReturn']);
 Route::get('/postcode/{postcode}', [\App\Http\Controllers\CheckoutController::class, 'postcodeLookup']);
 
+Route::get('/order/{uuid}', [\App\Http\Controllers\OrderController::class, 'loadOrder']);
+
 Route::get('/search', [\App\Http\Controllers\EcommerceCategoryController::class, 'searchProducts']);
 
 Route::post('/login', [\App\Http\Controllers\AuthenticationController::class, 'login']);

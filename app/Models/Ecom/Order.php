@@ -22,6 +22,7 @@ class Order extends Model
         $table->string('telephone')->nullable();
         $table->foreignId('shipping_address_id')->nullable();
         $table->foreignId('billing_address_id')->nullable();
+        $table->boolean('confirmation_viewed')->default(false);
         $table->float('value');
         $table->timestamps();
     }
