@@ -12,7 +12,22 @@ class OrderController
         $order = Order::where('uuid', $uuid)->firstOrFail();
         $auth = false;
 
-        if (!$order->confirmation_viewed) $auth = true;
+        if (!$order->confirmation_viewed)  {
+            $auth = true;
+            $order->confirmation_viewed = true;
+            $order->save();
+        }
+
+        if (!$auth && auth('vue')->check()) {
+            $user = auth('vue')->get();
+            if ($order->customer_id == $user->id) $auth = true;
+        }
+
+        $order->shippingAddress;
+        $order->billingAdderss;
+        $lineItems = $order->lineItems;
+
+        foreach ($lineItems as $lineItem) $lineItem->product;
 
         if ($auth) {
             return response()->json($order);

@@ -128,7 +128,7 @@ class CheckoutController
 
 
                     // 4. Redirect to your frontend order confirmation page with a unique token/ID
-                    $frontendSuccessUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/order-confirmation?uuid=' . $order->uuid;
+                    $frontendSuccessUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/order-confirmation?token=' . $order->uuid;
                     Log::info('Redirecting to success URL:', ['url' => $frontendSuccessUrl]);
                     return Redirect::to($frontendSuccessUrl);
 
