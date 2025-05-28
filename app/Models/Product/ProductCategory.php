@@ -10,6 +10,10 @@ class ProductCategory extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'featured_sections' => 'array'
+    ];
+
     public function migration(Blueprint $table)
     {
         $table->id();
@@ -21,6 +25,7 @@ class ProductCategory extends Model
         $table->string('link')->nullable();
         $table->boolean('enabled')->default(true);
         $table->integer('order')->default(1);
+        $table->longText('featured_sections')->nullable();
         $table->timestamps();
     }
 

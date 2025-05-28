@@ -99,6 +99,8 @@ class EcommerceFrontendController
         $category = $product->categories()->first();
         $productArray = $product->toArray();
         $productArray['brand'] = $brand->name;
+        $productArray['brand_logo'] = $brand->image;
+        $productArray['brand_slug'] = $brand->slug;
         $productArray['category'] = $category->name;
         $productArray['category_slug'] = $category->slug;
         $properties = [];
@@ -189,6 +191,7 @@ class EcommerceFrontendController
             $tempArray['name'] = $category['name'];
             $tempArray['slug'] = $category['slug'];
             $tempArray['subCategories'] = [];
+            $tempArray['featured_sections'] = $category['featured_sections'];
             $childCategories = [];
 
 

@@ -36,6 +36,30 @@ class ProductCategoryResource extends Resource
                             ->image()
                             ->directory('product_categories')
                             ->imageEditor(),
+                    ]),
+                Forms\Components\Section::make('Featured Sections')
+                    ->schema([
+                        Forms\Components\Repeater::make('featured_sections')
+                            ->columns(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->required(),
+                                Forms\Components\TextInput::make('description')
+                                    ->required(),
+                                Forms\Components\TextInput::make('url')
+                                    ->label('path')
+                                    ->required(),
+                                Forms\Components\ColorPicker::make('backgroundColor')
+                                    ->hint('Requires either background colour OR background image'),
+                                FileUpload::make('backgroundImage')
+                                    ->image(),
+                                Forms\Components\ColorPicker::make('textColor')
+                                    ->default('#FFF'),
+                                Forms\Components\ColorPicker::make('buttonBackgroundColor')
+                                    ->default('#FFF'),
+                                Forms\Components\ColorPicker::make('buttonTextColor')
+                                    ->default('#092540'),
+                            ])
                     ])
             ]);
     }
