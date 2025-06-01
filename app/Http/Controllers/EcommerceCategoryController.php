@@ -9,6 +9,7 @@ use App\Models\Ecom\ProductCollections;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Supplier;
+use App\Services\CategoryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -41,11 +42,10 @@ class EcommerceCategoryController
         return response()->json([]);
     }
 
-    public function loadCategory($slug)
+    public function loadCategory($slug, CategoryService $categoryService)
     {
         $category = ProductCategory::where('slug', $slug)->firstOrFail();
         $childCategories = $category->childCategories()->pluck('id')->toArray();
-
         $allCategoryIds = array_merge([$category->id], $childCategories);
 
         $products = Product::query()->whereHas('categories', function ($query) use ($allCategoryIds) {
@@ -53,9 +53,11 @@ class EcommerceCategoryController
         })
             ->whereNotNull('starting_price')
             ->whereNotNull('brand')
-            ->with('brand')
+            ->with([
+                'brand',
+                'customProperties.customProperty'
+            ])
             ->get();
-
 
         if (empty($category->parent_category_id)) {
             $parentCategory = $category;
@@ -63,13 +65,8 @@ class EcommerceCategoryController
             $parentCategory = $category->parentCategory;
         }
 
-        $additionalFilters = $parentCategory->filters()->get()->toArray();
-
-        foreach ($additionalFilters as &$additionalFilter) {
-            foreach ($additionalFilter['options'] as &$option) {
-                $option['label'] = str_replace('{{ category }}', $parentCategory->name, $option['label']);
-            }
-        }
+        $additionalFilters = $categoryService->generateAdditionalFilters($parentCategory);
+        $categoryService->generateCustomPropertyFilters($products, $additionalFilters);
 
         return response()->json([
             'category' => $category->toArray(),
@@ -115,4 +112,5 @@ class EcommerceCategoryController
 
         }
     }
+
 }
