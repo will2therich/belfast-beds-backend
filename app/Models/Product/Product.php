@@ -76,6 +76,21 @@ class Product extends Model
         );
     }
 
+    /**
+     * The categories that a product belongs to.
+     */
+    public function customProperties()
+    {
+        return $this->belongsToMany(
+            CustomPropertiesOptions::class,
+            'custom_properties_options',
+            'product_id',
+            'custom_property_option_id',
+            'id',
+            'id'
+        );
+    }
+
     public function priceOptions()
     {
         return $this->hasMany(ProductPriceGroup::class, 'rs_product_id', 'rs_id');
