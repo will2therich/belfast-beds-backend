@@ -3,12 +3,16 @@
 namespace App\Filament\Resources\Product\CustomPropertiesResource\RelationManagers;
 
 use App\Helper\StringHelper;
+use App\Models\Product\CustomPropertiesOptions;
+use App\Models\Product\Product;
+use App\Models\Product\PropertyOption;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use TomatoPHP\FilamentIcons\Components\IconPicker;
 
@@ -50,9 +54,23 @@ class PropertiesRelationManager extends RelationManager
                 Tables\Actions\Action::make('Assign To Products')
                     ->form([
                         Forms\Components\Select::make('products')
-                            ->options([])
+                            ->options(fn (Model $record) => Product::query()->take(10)->pluck('name', 'id'))
+                            ->getSearchResultsUsing(fn (string $search, Model $record) => Product::query()->where('name', 'like', "%{$search}%")->take(50)->pluck('name', 'id'))
+                            ->getOptionLabelUsing(fn ($value): ?string => Product::find($value)?->name)
                             ->multiple()
-                    ]),
+                    ])
+                    ->action(function (CustomPropertiesOptions $record, $data) {
+
+                        if (isset($data['products'])) {
+                            $productObjs = Product::whereIn('id', $data['products'])->get();
+
+                            foreach ($productObjs as $productObj) {
+                                $productObj->customProperties()->syncWithoutDetaching($record);
+                            }
+                            dd($productObjs);
+                        }
+                        dd($record, $data);
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

@@ -83,7 +83,7 @@ class Product extends Model
     {
         return $this->belongsToMany(
             CustomPropertiesOptions::class,
-            'custom_properties_options',
+            'product_custom_properties',
             'product_id',
             'custom_property_option_id',
             'id',
