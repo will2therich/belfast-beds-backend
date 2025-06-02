@@ -39,6 +39,7 @@ class RetailSystemFullSync extends Command
     {
 
         $catalog = $retailSystemSoapService->getCatalog();
+        $stock = $retailSystemSoapService->getStock();
 
         $this->info('Product categories sync started - ' . time() );
         $this->handleProductCategories($catalog);

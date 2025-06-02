@@ -53,4 +53,28 @@ class RetailSystemSoapService
             }
         });
     }
+
+    /**
+     * Get The Catalog from retailsystem GetCatalog Endpoint.
+     * Cached per hour
+     *
+     * @return mixed
+     */
+    public function getStock()
+    {
+        return Cache::remember('rs_stock', 3600, function () {
+            try {
+                $wsdl = 'https://belfastbeds.retailsystem.net/services/v2/Stock.asmx?WSDL';
+                $soapClient = new \SoapClient($wsdl, $this->soapOptions);
+
+                $result = $soapClient->StockListing($this->parameters);
+
+                $xml = new \SimpleXMLElement($result->StockListingResult->any);
+                return json_decode(json_encode((array)$xml), true);
+            } catch (\Exception $e) {
+                dd($e->getMessage());
+                Log::error($e->getMessage());
+            }
+        });
+    }
 }
