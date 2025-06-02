@@ -2,6 +2,12 @@
 
 namespace App\Services;
 
+use App\Helper\StringHelper;
+use App\Models\Product\CustomProperties;
+use App\Models\Product\CustomPropertiesOptions;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+
 class CategoryService
 {
 
@@ -14,6 +20,7 @@ class CategoryService
             foreach ($additionalFilter['options'] as &$option) {
                 $option['label'] = str_replace('{{ category }}', $parentCategory->name, $option['label']);
             }
+            $additionalFilter['slug'] = 'fil_' . $additionalFilter['id'] . '_' . StringHelper::generateSlug($additionalFilter['name']);
         }
 
         return $additionalFilters;
@@ -35,6 +42,7 @@ class CategoryService
                 $filterArr = [
                     'name' => $customProperty->name,
                     'option_name' => $customProperty->slug,
+                    'slug' => $customProperty->slug,
                     'options' => []
                 ];
 
@@ -46,6 +54,33 @@ class CategoryService
                 }
 
                 $additionalFilters[] = $filterArr;
+            }
+        }
+    }
+
+    public function handlePropertySearch(Request $request, $productQuery)
+    {
+        $all = $request->all();
+
+        foreach ($all as $key => $value) {
+            if (str_starts_with($key, 'prop_')) {
+                $options = explode(',', $value);
+
+                $customPropertyQuery = CustomProperties::where('slug', $key)->first();
+
+                if ($customPropertyQuery instanceof CustomProperties) {
+                    $options = CustomPropertiesOptions::query()
+                        ->where('custom_property_id', $customPropertyQuery->id)
+                        ->where(function (Builder $query) use ($options) {
+                            foreach ($options as $option) {
+                                $query->orWhere('name', $option);
+                            }
+                        })->get()->pluck('id')->toArray();
+
+                    $productQuery->whereHas('customProperties', function (Builder $query) use ($options) {
+                        $query->whereIn('id', $options);
+                    });
+                }
             }
         }
     }

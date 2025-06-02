@@ -42,7 +42,7 @@ class EcommerceCategoryController
         return response()->json([]);
     }
 
-    public function loadCategory($slug, CategoryService $categoryService)
+    public function loadCategory(Request $request, $slug, CategoryService $categoryService)
     {
         $category = ProductCategory::where('slug', $slug)->firstOrFail();
         $childCategories = $category->childCategories()->pluck('id')->toArray();
@@ -56,8 +56,14 @@ class EcommerceCategoryController
             ->with([
                 'brand',
                 'customProperties.customProperty'
-            ])
-            ->get();
+            ]);
+
+        // We need to check for filters on a query with no search params.
+        $propNoSearch = $products->clone()->get();
+
+        $categoryService->handlePropertySearch($request, $products);
+
+        $products = $products->get();
 
         if (empty($category->parent_category_id)) {
             $parentCategory = $category;
@@ -66,7 +72,7 @@ class EcommerceCategoryController
         }
 
         $additionalFilters = $categoryService->generateAdditionalFilters($parentCategory);
-        $categoryService->generateCustomPropertyFilters($products, $additionalFilters);
+        $categoryService->generateCustomPropertyFilters($propNoSearch, $additionalFilters);
 
         return response()->json([
             'category' => $category->toArray(),
@@ -75,39 +81,58 @@ class EcommerceCategoryController
         ]);
     }
 
-    public function loadCollection($slug)
+    public function loadCollection(Request $request, $slug, CategoryService $categoryService)
     {
         $collection = ProductCollections::where('slug', $slug)->firstOrFail();
+        $additionalFilters = [];
         $products = Product::query()
             ->whereIn('id', $collection->products)
-            ->with('brand')
-            ->get();
+            ->with([
+                'brand',
+                'customProperties.customProperty'
+            ]);
+
+        $prodNoFilter = $products->clone()->get();
+
+        $categoryService->handlePropertySearch($request, $products);
+        $categoryService->generateCustomPropertyFilters($prodNoFilter, $additionalFilters);
+
+        $products = $products->get();
 
         return response()->json([
             'category' => $collection,
             'products' => $products,
-            'additionalFilters' => []
+            'additionalFilters' => $additionalFilters
         ]);
     }
 
-    public function searchProducts(Request $request)
+    public function searchProducts(Request $request, CategoryService $categoryService)
     {
         $q = null;
 
         if ($request->has('q')) {
             $q = $request->q;
 
+            $additionalFilters = [];
             $products = Product::query()
                 ->where('name', 'like', '%' . $q . '%')
                 ->whereNotNull('starting_price')
                 ->whereNotNull('brand')
-                ->with('brand')
-                ->get();
+                ->with([
+                    'brand',
+                    'customProperties.customProperty'
+                ]);
+            $prodNoFilter = $products->clone()->get();
+
+            $categoryService->generateCustomPropertyFilters($prodNoFilter, $additionalFilters);
+            $categoryService->handlePropertySearch($request, $products);
+
+            $products = $products->get();
 
             return response()->json([
                 'category' => [],
                 'products' => $products,
-                'additionalFilters' => []
+                'additionalFilters' => $additionalFilters
             ]);
 
         }
