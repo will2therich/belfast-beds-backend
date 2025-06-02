@@ -111,7 +111,7 @@ class EcommerceFrontendController
         $addons = $product->addons;
         $priceOptions = $product->priceOptions()->orderBy('price')->get();
         $featuredProperties = [];
-        $properties = [];
+        $custProperties = [];
 
         foreach ($product->customProperties as $customProperty) {
             $propertyDetails  = $customProperty->customProperty;
@@ -123,11 +123,11 @@ class EcommerceFrontendController
                 'description' => $customProperty->description
             ];
 
-            if ($propertyDetails->display_on_product_page) $properties[] = $tempArr;
+            if ($propertyDetails->display_on_product_page) $custProperties[] = $tempArr;
             if ($propertyDetails->featured_on_product_page) $featuredProperties[] = $tempArr;
         }
 
-        $productArray['properties'] = $properties;
+        $productArray['properties'] = $custProperties;
         $productArray['featuredProperties'] = $featuredProperties;
 
         foreach ($priceOptions as $priceOption) {
