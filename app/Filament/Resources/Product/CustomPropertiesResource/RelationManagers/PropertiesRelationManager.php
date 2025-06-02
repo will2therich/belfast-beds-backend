@@ -25,7 +25,8 @@ class PropertiesRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255)
                     ->required(),
-                IconPicker::make('icon')
+                IconPicker::make('icon'),
+                Forms\Components\Textarea::make('description')
             ]);
     }
 

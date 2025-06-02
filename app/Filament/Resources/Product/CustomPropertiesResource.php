@@ -33,6 +33,9 @@ class CustomPropertiesResource extends Resource
                             ->inline(false),
                         Forms\Components\Toggle::make('display_on_product_page')
                             ->inline(false),
+                        Forms\Components\Toggle::make('featured_on_product_page')
+                            ->hint('Shown under title in a list')
+                            ->inline(false),
                         Forms\Components\Toggle::make('display_in_nav_menu')
                             ->inline(false),
                     ])

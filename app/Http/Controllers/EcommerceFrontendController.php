@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\IconHelper;
 use App\Helper\StringHelper;
 use App\Models\Core\Pages;
 use App\Models\Product\AddOn;
@@ -109,6 +110,25 @@ class EcommerceFrontendController
         $options = $product->options;
         $addons = $product->addons;
         $priceOptions = $product->priceOptions()->orderBy('price')->get();
+        $featuredProperties = [];
+        $properties = [];
+
+        foreach ($product->customProperties as $customProperty) {
+            $propertyDetails  = $customProperty->customProperty;
+
+            $tempArr = [
+                'title' => $propertyDetails->name,
+                'value' => $customProperty->name,
+                'icon' => IconHelper::generateSvgIcon($customProperty->icon),
+                'description' => $customProperty->description
+            ];
+
+            if ($propertyDetails->display_on_product_page) $properties[] = $tempArr;
+            if ($propertyDetails->featured_on_product_page) $featuredProperties[] = $tempArr;
+        }
+
+        $productArray['properties'] = $properties;
+        $productArray['featuredProperties'] = $featuredProperties;
 
         foreach ($priceOptions as $priceOption) {
             if (!isset($priceOptionsArr[$priceOption->price_group_id])) {

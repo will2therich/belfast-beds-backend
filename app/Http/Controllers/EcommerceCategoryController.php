@@ -113,9 +113,15 @@ class EcommerceCategoryController
         if ($request->has('q')) {
             $q = $request->q;
 
+            // Also search based on supplier name.
+            $suppliers = Supplier::where('name', 'like', '%' . $q . '%')->get()->pluck('id');
+
             $additionalFilters = [];
             $products = Product::query()
-                ->where('name', 'like', '%' . $q . '%')
+                ->where(function (Builder $query) use ($suppliers, $q) {
+                    $query->where('name', 'like', '%' . $q . '%');
+                    $query->orWhereIn('brand', $suppliers);
+                })
                 ->whereNotNull('starting_price')
                 ->whereNotNull('brand')
                 ->with([

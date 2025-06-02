@@ -16,6 +16,7 @@ class CustomPropertiesOptions extends Model
         $table->string('name');
         $table->string('slug')->nullable();
         $table->string('icon')->nullable();
+        $table->longText('description')->nullable();
         $table->foreignId('custom_property_id');
         $table->timestamps();
     }
