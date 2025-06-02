@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources\Ecom;
+namespace App\Filament\Resources;
 
-use App\Filament\Resources\Ecom\CustomerResource\Pages;
-use App\Filament\Resources\Ecom\CustomerResource\RelationManagers;
-use App\Models\Ecom\Customer;
+use App\Filament\Resources\UserResource\Pages;
+use App\Filament\Resources\UserResource\RelationManagers;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,24 +13,27 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CustomerResource extends Resource
+class UserResource extends Resource
 {
-    protected static ?string $model = Customer::class;
+    protected static ?string $model = User::class;
 
-    protected static ?string $navigationGroup = 'Ecommerce';
-    protected static ?string $navigationIcon = 'carbon-customer';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $navigationGroup = 'Settings';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Customer Details')
+                Forms\Components\Section::make('User Details')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('full_name')
+                        Forms\Components\TextInput::make('name')
                             ->required(),
                         Forms\Components\TextInput::make('email')
                             ->required(),
+                        Forms\Components\TextInput::make('password')
+                            ->visibleOn('create')
                     ])
             ]);
     }
@@ -40,7 +43,7 @@ class CustomerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id'),
-                Tables\Columns\TextColumn::make('full_name'),
+                Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('email'),
             ])
             ->filters([
@@ -66,9 +69,9 @@ class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCustomers::route('/'),
-            'create' => Pages\CreateCustomer::route('/create'),
-            'edit' => Pages\EditCustomer::route('/{record}/edit'),
+            'index' => Pages\ListUsers::route('/'),
+            'create' => Pages\CreateUser::route('/create'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }

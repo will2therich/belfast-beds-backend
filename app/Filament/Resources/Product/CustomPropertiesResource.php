@@ -17,7 +17,7 @@ class CustomPropertiesResource extends Resource
 {
     protected static ?string $model = CustomProperties::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'carbon-property-relationship';
 
     protected static ?string $navigationGroup = 'Products';
 

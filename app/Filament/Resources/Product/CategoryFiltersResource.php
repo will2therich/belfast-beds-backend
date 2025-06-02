@@ -21,7 +21,7 @@ class CategoryFiltersResource extends Resource
 {
     protected static ?string $model = CategoryFilters::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'iconoir-filter';
 
     protected static ?string $navigationGroup = 'Products';
 

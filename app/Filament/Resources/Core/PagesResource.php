@@ -19,7 +19,7 @@ class PagesResource extends Resource
     protected static ?string $model = PageModel::class;
 
     protected static ?string $navigationGroup = 'Core';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'iconoir-page';
 
     public static function form(Form $form): Form
     {
