@@ -82,6 +82,8 @@ class HomePageSettings extends Page
     }
 
     public function saveForm() {
+
+        // I hate this but we are working around issues & have to manually save the images
         foreach ($this->data as $key => $value) {
             if ($key == 'homeHeroSlides') {
                 foreach ($value as $slideKey =>  $value2) {
