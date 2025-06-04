@@ -34,7 +34,7 @@ class HomePageSettings extends Page
                 $value = json_decode($value, 1);
 
                 foreach ($value as &$option) {
-                    if (isset($option['image']) && is_array($option['image'])) {
+                    if (isset($option['image']) && is_array($option['image']) && isset($option['imageUrl'])) {
                         $option['image'] = $option['imageUrl'];
                     }
                 }

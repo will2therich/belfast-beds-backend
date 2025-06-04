@@ -12,7 +12,7 @@ class Product extends Model
 
 
     protected $casts = [
-        'pictures' => 'array',
+        'photos' => 'array',
         'sections' => 'array'
     ];
 

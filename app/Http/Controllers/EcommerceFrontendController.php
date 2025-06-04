@@ -10,11 +10,72 @@ use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Product\Properties;
+use App\Models\Settings;
 use App\Models\Supplier;
 
 class EcommerceFrontendController
 {
 
+    public function loadHomePage()
+    {
+        $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
+        $heroData = [];
+
+        if ($heroSlides instanceof Settings) {
+            $heroData = json_decode($heroSlides->value, 2);
+        }
+
+        foreach ($heroData as &$datum) {
+            if (isset($datum['image']) && isset($datum['imageUrl'])) {
+                $datum['image'] = $datum['imageUrl'];
+            }
+        }
+
+        $data = [
+            'heroSlides' => $heroData,
+            'features' => [
+                ['title' => 'Free delivery', 'description' => '2 man delivery to room'],
+                ['title' => 'Shop with confidence', 'description' => 'Established since 1905'],
+                ['title' => 'Over 100 beds on show', 'description' => 'In our Cambridge branch'],
+            ],
+            'featuredProducts' => [
+                [
+                    'id' => 1,
+                    'brand' => 'Relyon',
+                    'name' => 'Barton Ortho 1000 Mattress',
+                    'price' => '£589.00',
+                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+1',
+                    'discount' => 'Extra 10% Discount Code At Checkout'
+                ],
+                [
+                    'id' => 2,
+                    'brand' => 'Julian Bowen',
+                    'name' => 'Calgary Bunk',
+                    'price' => '£629.00',
+                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bunk+Bed',
+                    'discount' => 'Extra 10% Discount Code At Checkout'
+                ],
+                [
+                    'id' => 3,
+                    'brand' => 'Belfast Beds',
+                    'name' => 'Consul Open Coil Medium Feel Mattress',
+                    'price' => '£149.00',
+                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+2',
+                    'discount' => 'Extra 10% Discount Code At Checkout'
+                ],
+                [
+                    'id' => 4,
+                    'brand' => 'Belfast Beds',
+                    'name' => 'Memory Pocket Silver 1000 - Firm - 2 Drawer Set inc. Strutted Headboard',
+                    'price' => '£459.00',
+                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bed+Set',
+                    'discount' => 'Extra 10% Discount Code At Checkout'
+                ],
+            ]
+        ];
+
+        return response()->json($data);
+    }
 
     public function loadMenu()
     {

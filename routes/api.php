@@ -7,6 +7,7 @@ Route::get('/test', [\App\Http\Controllers\TestController::class, 'test']);
 
 
 
+Route::get('/config/home', [\App\Http\Controllers\EcommerceFrontendController::class, 'loadHomePage']);
 Route::get('/config/menu', [\App\Http\Controllers\EcommerceFrontendController::class, 'loadMenu']);
 Route::get('/product/{slug}', [\App\Http\Controllers\EcommerceFrontendController::class, 'loadProduct']);
 Route::get('/page/{slug}', [\App\Http\Controllers\EcommerceFrontendController::class, 'loadPage']);
