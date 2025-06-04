@@ -22,6 +22,7 @@ class Product extends Model
         $table->string('name');
         $table->string('rs_id')->index();
         $table->boolean('enabled')->default(true);
+        $table->boolean('featured')->default(false);
         $table->string('slug')->nullable()->unique();
         $table->longText('photos')->nullable();
         $table->string('brand')->nullable();
