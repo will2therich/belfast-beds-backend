@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Guava\FilamentIconPicker\Forms\IconPicker;
 
 class HomePageSettings extends Page
 {
@@ -61,6 +62,7 @@ class HomePageSettings extends Page
             Section::make('Home Page Details')
                 ->schema([
                     Repeater::make('homeHeroSlides')
+                        ->collapsible()
                         ->columns(3)
                         ->schema([
                             TextInput::make('title')
@@ -75,6 +77,17 @@ class HomePageSettings extends Page
                                 ->required(),
                             TextInput::make('buttonUrl')
                                 ->required()
+                        ]),
+                    Repeater::make('features')
+                        ->columns(3)
+                        ->collapsible()
+                        ->grid()
+                        ->schema([
+                            TextInput::make('title')
+                                ->required(),
+                            TextInput::make('description')
+                                ->required(),
+                            IconPicker::make('icon')
                         ])
                 ]),
 

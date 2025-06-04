@@ -10,6 +10,7 @@
         "codeat3/blade-carbon-icons": "^2.35",
         "codeat3/blade-iconpark": "^1.7",
         "filament/filament": "^3.3",
+        "guava/filament-icon-picker": "^2.0",
         "laravel/framework": "^11.9",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",

@@ -19,11 +19,19 @@ class EcommerceFrontendController
     public function loadHomePage()
     {
         $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
+        $features = Settings::where('key', 'features')->first();
         $heroData = [];
+        $featuresData = [];
 
-        if ($heroSlides instanceof Settings) {
-            $heroData = json_decode($heroSlides->value, 2);
+        if ($heroSlides instanceof Settings) $heroData = json_decode($heroSlides->value, 2);
+        if ($features instanceof Settings) $featuresData = json_decode($features->value, 2);
+
+        foreach ($featuresData as &$featuresDatum) {
+            if (isset($featuresDatum['icon'])) {
+                $featuresDatum['icon'] = IconHelper::generateSvgIcon($featuresDatum['icon']);
+            }
         }
+
 
         foreach ($heroData as &$datum) {
             if (isset($datum['image']) && isset($datum['imageUrl'])) {
@@ -33,11 +41,7 @@ class EcommerceFrontendController
 
         $data = [
             'heroSlides' => $heroData,
-            'features' => [
-                ['title' => 'Free delivery', 'description' => '2 man delivery to room'],
-                ['title' => 'Shop with confidence', 'description' => 'Established since 1905'],
-                ['title' => 'Over 100 beds on show', 'description' => 'In our Cambridge branch'],
-            ],
+            'features' => $featuresData,
             'featuredProducts' => [
                 [
                     'id' => 1,
