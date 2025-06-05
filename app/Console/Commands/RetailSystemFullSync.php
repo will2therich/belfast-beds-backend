@@ -96,6 +96,7 @@ class RetailSystemFullSync extends Command
                         if (!$stockItem instanceof StockItem) $stockItem = new StockItem();
 
                         $stockItem->item_id = $hashRaw;
+                        $stockItem->product_id = $product->rs_id;
                         $stockItem->item_hash = Hash::make($hashRaw);
                         $stockItem->qty = $stockValue;
                         $stockItem->save();
@@ -156,6 +157,16 @@ class RetailSystemFullSync extends Command
             } else {
                 $supplierName = $supplierData['Brand']['WebName']['@attributes']['attribute'];
             }
+            $leadTime = 14;
+
+            if (isset($supplierData['LeadTime'])) {
+                if (isset($supplierData['LeadTime']['@attributes'])) $supplierData['LeadTime'] = [$supplierData['LeadTime']];
+                try {
+                    $leadTime = $supplierData['LeadTime'][0]['@attributes']['attribute'];
+                } catch (\Exception $e) {
+                    dump("Failed To Get Lead Time");
+                }
+            }
 
             $supplier = Supplier::where('rs_id', $supplierId)->first();
 
@@ -164,6 +175,7 @@ class RetailSystemFullSync extends Command
                 $supplier->rs_id = $supplierId;
                 $supplier->name = $supplierName;
                 $supplier->slug = str_replace(' ', '_', strtolower(trim($supplier->name)));
+                $supplier->lead_time = $leadTime;
                 $supplier->save();
             }
 

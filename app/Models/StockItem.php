@@ -14,6 +14,7 @@ class StockItem extends Model
     {
         $table->id();
         $table->string('item_id');
+        $table->string('product_id')->nullable();
         $table->string('item_hash');
         $table->string('qty');
         $table->timestamps();

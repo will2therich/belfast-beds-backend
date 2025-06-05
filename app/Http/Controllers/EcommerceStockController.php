@@ -25,11 +25,21 @@ class EcommerceStockController
 
         $stockItem = StockItem::where('item_id',$hashRaw)->first();
 
-        if ($stockItem instanceof StockItem) {
-            $responseData['inStock'] = true;
+        $product = Product::where('rs_id', $productId)->first();
+        $brand = $product->brand()->first();
+
+        if ($brand->lead_time >= 7 && $brand->lead_time <= 14) {
+            $responseData['leadTime'] = '1-2 Weeks';
+        } elseif ($brand->lead_time >= 14 && $brand->lead_time <= 28) {
+            $responseData['leadTime'] = '2-4 Weeks';
+        } else {
+            $responseData['leadTime'] = '4-6 Weeks';
         }
 
 
+        if ($stockItem instanceof StockItem) {
+            $responseData['inStock'] = true;
+        }
 
         return response()->json($responseData);
     }

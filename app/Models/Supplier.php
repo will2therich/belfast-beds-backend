@@ -19,6 +19,7 @@ class Supplier extends Model
         $table->longText('description')->nullable();
         $table->string('image')->nullable();
         $table->string('banner_image')->nullable();
+        $table->integer('lead_time')->nullable();
         $table->string('rs_id')->index();
         $table->timestamps();
     }
