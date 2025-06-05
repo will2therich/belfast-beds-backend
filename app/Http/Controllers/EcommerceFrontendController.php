@@ -24,9 +24,11 @@ class EcommerceFrontendController
             $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
             $features = Settings::where('key', 'features')->first();
             $promoBlocks = Settings::where('key', 'promoBlocks')->first();
+            $promoSettings = Settings::where('key', 'like', 'promotional_%')->get();
             $heroData = [];
             $featuresData = [];
             $promoBlocksData = [];
+            $promotionData = [];
 
             if ($heroSlides instanceof Settings) $heroData = json_decode($heroSlides->value, 2);
             if ($features instanceof Settings) $featuresData = json_decode($features->value, 2);
@@ -47,6 +49,10 @@ class EcommerceFrontendController
 
             foreach ($promoBlocksData as &$blockData) {
                 if (isset($blockData['imageUrl'])) $blockData['imageUrl'] = ImageHelper::getImageUrl($blockData['imageUrl']);
+            }
+
+            foreach ($promoSettings as $promoSetting) {
+                $promotionData[str_replace('promotional_', '', $promoSetting->key)] = $promoSetting->value;
             }
 
             return [
@@ -86,7 +92,8 @@ class EcommerceFrontendController
                         'discount' => 'Extra 10% Discount Code At Checkout'
                     ],
                 ],
-                'promoBlocks' => $promoBlocksData
+                'promoBlocks' => $promoBlocksData,
+                'promotion' => $promotionData
             ];
         });
 

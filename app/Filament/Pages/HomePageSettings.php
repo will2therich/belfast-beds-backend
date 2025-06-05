@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Helper\StringHelper;
 use App\Models\Settings;
 use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Cache;
@@ -36,16 +38,7 @@ class HomePageSettings extends Page
 
         foreach ($settings as $setting) {
             $value = $setting->value;
-
-            if (StringHelper::isJson($value)) {
-                $value = json_decode($value, 1);
-
-                foreach ($value as &$option) {
-                    if (isset($option['image']) && is_array($option['image']) && isset($option['imageUrl'])) {
-                        $option['image'] = $option['imageUrl'];
-                    }
-                }
-            }
+            if (StringHelper::isJson($value)) $value = json_decode($value, 1);
 
             $fillArr[$setting->key] = $value;
         }
@@ -192,6 +185,20 @@ class HomePageSettings extends Page
                                 ]),
                         ])
                         ->columnSpanFull(),
+                    Section::make('Promotional Banner')
+                        ->schema([
+                            Toggle::make('promotional_active')
+                                ->label('Active')
+                                ->inline(false),
+                            TextInput::make('promotional_title')
+                                ->label('Title'),
+                            TextInput::make('promotional_text')
+                                ->label('Text'),
+                            ColorPicker::make('promotional_backgroundColour')
+                                ->label('Background Colour'),
+                            DateTimePicker::make('promotional_endDate')
+                                ->label('End Date'),
+                        ])
                 ]),
 
         ];
