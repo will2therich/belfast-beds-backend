@@ -10,7 +10,7 @@ use Illuminate\Database\Schema\Blueprint;
 class Product extends Model
 {
 
-
+    protected $guarded = [];
     protected $casts = [
         'photos' => 'array',
         'sections' => 'array'

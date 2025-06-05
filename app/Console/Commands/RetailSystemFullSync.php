@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Helper\StringHelper;
 use App\Models\PivotTables\ProductPriceGroup;
 use App\Models\Product\AddOn;
 use App\Models\Product\AddOnOptions;
@@ -11,9 +12,12 @@ use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Product\Properties;
 use App\Models\Product\PropertyOption;
+use App\Models\StockItem;
 use App\Models\Supplier;
 use App\Services\RetailSystemSoapService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class RetailSystemFullSync extends Command
@@ -51,7 +55,56 @@ class RetailSystemFullSync extends Command
         $this->newLine();
         $this->info('Suppliers sync finished - ' . time());
 
+        $this->info('Stock sync started - ' . time() );
+        $this->handleStock($stock);
+        $this->newLine();
+        $this->info('Stock sync finished - ' . time());
 
+    }
+
+    private function handleStock($stockResponse)
+    {
+        // Clear out old stock data before importing
+        StockItem::query()->truncate();
+
+        if (isset($stockResponse['row'])) {
+
+            foreach ($stockResponse['row'] as $row) {
+                try {
+
+                    $product = Product::where('rs_id', $row['@attributes']['cid'])->first();
+                    if ($product instanceof Product) {
+                        $hashRaw = $product->slug;
+                        $numberHash = 0;
+                        $stockValue = 0;
+
+                        foreach ($row as $key => $rowItems) {
+                            if ($key == '@attributes') continue;
+                            if (isset($rowItems['@attributes'])) {
+                                if ($key == 'L') {
+                                    $stockValue = $rowItems['@attributes']['q'];
+                                } else {
+                                    if (isset($rowItems['@attributes']['oid'])) {
+                                        $numberHash += (int) $rowItems['@attributes']['oid'];
+                                    }
+                                }
+                            }
+                        }
+                        $hashRaw .= '_' . $numberHash;
+
+                        $stockItem = StockItem::where('item_id', $hashRaw)->first();
+                        if (!$stockItem instanceof StockItem) $stockItem = new StockItem();
+
+                        $stockItem->item_id = $hashRaw;
+                        $stockItem->item_hash = Hash::make($hashRaw);
+                        $stockItem->qty = $stockValue;
+                        $stockItem->save();
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error Importing Stock Item: ' . $e->getMessage());
+                }
+            }
+        }
     }
 
 

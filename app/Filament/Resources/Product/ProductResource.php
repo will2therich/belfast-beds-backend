@@ -32,6 +32,8 @@ class ProductResource extends Resource
                             ->required(),
                         Forms\Components\Toggle::make('enabled')
                             ->inline(false),
+                        Forms\Components\Toggle::make('featured')
+                            ->inline(false),
                         Forms\Components\FileUpload::make('photos')
                             ->multiple(),
 
@@ -45,7 +47,8 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('rs_id')
                     ->label('RS ID'),
-                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('slug'),
                 Tables\Columns\BooleanColumn::make('enabled'),
             ])

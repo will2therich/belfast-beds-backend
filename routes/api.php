@@ -16,6 +16,8 @@ Route::get('/category/{slug}', [\App\Http\Controllers\EcommerceCategoryControlle
 Route::get('/collection/{slug}', [\App\Http\Controllers\EcommerceCategoryController::class, 'loadCollection']);
 Route::get('/brand/{slug}', [\App\Http\Controllers\EcommerceCategoryController::class, 'loadBrand']);
 
+Route::post('/stock/{productId}', [\App\Http\Controllers\EcommerceStockController::class, 'checkStock']);
+
 
 Route::post('/checkout/update', [\App\Http\Controllers\CheckoutController::class, 'updateCheckout']);
 Route::get('/payment/intent', [\App\Http\Controllers\CheckoutController::class, 'getPaymentIntentForCart']);

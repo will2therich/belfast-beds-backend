@@ -9,6 +9,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -186,6 +187,8 @@ class HomePageSettings extends Page
                         ])
                         ->columnSpanFull(),
                     Section::make('Promotional Banner')
+                        ->columns(2)
+                        ->collapsible()
                         ->schema([
                             Toggle::make('promotional_active')
                                 ->label('Active')
@@ -198,7 +201,9 @@ class HomePageSettings extends Page
                                 ->label('Background Colour'),
                             DateTimePicker::make('promotional_endDate')
                                 ->label('End Date'),
-                        ])
+                        ]),
+                    RichEditor::make('about_text')
+                        ->required()
                 ]),
 
         ];
