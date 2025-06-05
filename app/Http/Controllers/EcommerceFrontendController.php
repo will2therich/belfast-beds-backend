@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helper\IconHelper;
+use App\Helper\ImageHelper;
 use App\Helper\StringHelper;
 use App\Models\Core\Pages;
 use App\Models\Product\AddOn;
@@ -12,71 +13,82 @@ use App\Models\Product\ProductCategory;
 use App\Models\Product\Properties;
 use App\Models\Settings;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\Cache;
 
 class EcommerceFrontendController
 {
 
     public function loadHomePage()
     {
-        $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
-        $features = Settings::where('key', 'features')->first();
-        $heroData = [];
-        $featuresData = [];
+        $data = Cache::remember('home-data', now()->addHour(), function () {
+            $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
+            $features = Settings::where('key', 'features')->first();
+            $promoBlocks = Settings::where('key', 'promoBlocks')->first();
+            $heroData = [];
+            $featuresData = [];
+            $promoBlocksData = [];
 
-        if ($heroSlides instanceof Settings) $heroData = json_decode($heroSlides->value, 2);
-        if ($features instanceof Settings) $featuresData = json_decode($features->value, 2);
+            if ($heroSlides instanceof Settings) $heroData = json_decode($heroSlides->value, 2);
+            if ($features instanceof Settings) $featuresData = json_decode($features->value, 2);
+            if ($promoBlocks instanceof Settings) $promoBlocksData = json_decode($promoBlocks->value, 2);
 
-        foreach ($featuresData as &$featuresDatum) {
-            if (isset($featuresDatum['icon'])) {
-                $featuresDatum['icon'] = IconHelper::generateSvgIcon($featuresDatum['icon']);
+
+            foreach ($featuresData as &$featuresDatum) {
+                if (isset($featuresDatum['icon'])) {
+                    $featuresDatum['icon'] = IconHelper::generateSvgIcon($featuresDatum['icon']);
+                }
             }
-        }
 
-
-        foreach ($heroData as &$datum) {
-            if (isset($datum['image']) && isset($datum['imageUrl'])) {
-                $datum['image'] = $datum['imageUrl'];
+            foreach ($heroData as &$datum) {
+                if (isset($datum['image'])) {
+                    $datum['image'] = ImageHelper::getImageUrl($datum['image']);
+                }
             }
-        }
 
-        $data = [
-            'heroSlides' => $heroData,
-            'features' => $featuresData,
-            'featuredProducts' => [
-                [
-                    'id' => 1,
-                    'brand' => 'Relyon',
-                    'name' => 'Barton Ortho 1000 Mattress',
-                    'price' => '£589.00',
-                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+1',
-                    'discount' => 'Extra 10% Discount Code At Checkout'
+            foreach ($promoBlocksData as &$blockData) {
+                if (isset($blockData['imageUrl'])) $blockData['imageUrl'] = ImageHelper::getImageUrl($blockData['imageUrl']);
+            }
+
+            return [
+                'heroSlides' => $heroData,
+                'features' => $featuresData,
+                'featuredProducts' => [
+                    [
+                        'id' => 1,
+                        'brand' => 'Relyon',
+                        'name' => 'Barton Ortho 1000 Mattress',
+                        'price' => '£589.00',
+                        'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+1',
+                        'discount' => 'Extra 10% Discount Code At Checkout'
+                    ],
+                    [
+                        'id' => 2,
+                        'brand' => 'Julian Bowen',
+                        'name' => 'Calgary Bunk',
+                        'price' => '£629.00',
+                        'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bunk+Bed',
+                        'discount' => 'Extra 10% Discount Code At Checkout'
+                    ],
+                    [
+                        'id' => 3,
+                        'brand' => 'Belfast Beds',
+                        'name' => 'Consul Open Coil Medium Feel Mattress',
+                        'price' => '£149.00',
+                        'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+2',
+                        'discount' => 'Extra 10% Discount Code At Checkout'
+                    ],
+                    [
+                        'id' => 4,
+                        'brand' => 'Belfast Beds',
+                        'name' => 'Memory Pocket Silver 1000 - Firm - 2 Drawer Set inc. Strutted Headboard',
+                        'price' => '£459.00',
+                        'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bed+Set',
+                        'discount' => 'Extra 10% Discount Code At Checkout'
+                    ],
                 ],
-                [
-                    'id' => 2,
-                    'brand' => 'Julian Bowen',
-                    'name' => 'Calgary Bunk',
-                    'price' => '£629.00',
-                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bunk+Bed',
-                    'discount' => 'Extra 10% Discount Code At Checkout'
-                ],
-                [
-                    'id' => 3,
-                    'brand' => 'Belfast Beds',
-                    'name' => 'Consul Open Coil Medium Feel Mattress',
-                    'price' => '£149.00',
-                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Mattress+2',
-                    'discount' => 'Extra 10% Discount Code At Checkout'
-                ],
-                [
-                    'id' => 4,
-                    'brand' => 'Belfast Beds',
-                    'name' => 'Memory Pocket Silver 1000 - Firm - 2 Drawer Set inc. Strutted Headboard',
-                    'price' => '£459.00',
-                    'imageUrl' => 'https://placehold.co/200x150/f7fafc/cbd5e0?text=Bed+Set',
-                    'discount' => 'Extra 10% Discount Code At Checkout'
-                ],
-            ]
-        ];
+                'promoBlocks' => $promoBlocksData
+            ];
+        });
 
         return response()->json($data);
     }

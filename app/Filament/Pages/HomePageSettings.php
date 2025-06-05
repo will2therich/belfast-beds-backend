@@ -4,15 +4,21 @@ namespace App\Filament\Pages;
 
 use App\Helper\StringHelper;
 use App\Models\Settings;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Guava\FilamentIconPicker\Forms\IconPicker;
+use RalphJSmit\Filament\MediaLibrary\Forms\Components\MediaPicker;
 
 class HomePageSettings extends Page
 {
@@ -62,6 +68,7 @@ class HomePageSettings extends Page
             Section::make('Home Page Details')
                 ->schema([
                     Repeater::make('homeHeroSlides')
+                        ->label('Hero Slides')
                         ->collapsible()
                         ->columns(3)
                         ->schema([
@@ -69,10 +76,8 @@ class HomePageSettings extends Page
                                 ->required(),
                             TextInput::make('description')
                                 ->required(),
-                            FileUpload::make('image')
-                                ->directory('hero_slides')
-                                ->image()
-                                ->imageEditor(),
+                            MediaPicker::make('image')
+                                ->grow(),
                             TextInput::make('buttonText')
                                 ->required(),
                             TextInput::make('buttonUrl')
@@ -88,34 +93,113 @@ class HomePageSettings extends Page
                             TextInput::make('description')
                                 ->required(),
                             IconPicker::make('icon')
+                        ]),
+                    Repeater::make('promoBlocks')
+                        ->label('Promotional Blocks')
+                        ->addActionLabel('Add Promo Block')
+                        ->collapsible()
+                        ->reorderableWithButtons()
+                        ->schema([
+                            Select::make('type')
+                                ->options([
+                                    'imageWithGradientText' => 'Image with Gradient Text',
+                                    'solidColorBanner' => 'Solid Color Banner',
+                                    'imageWithBadge' => 'Image with Badge',
+                                ])
+                                ->required()
+                                ->live() // This is key for dynamic fields
+                                ->afterStateUpdated(fn (callable $set) => $set('badge', null)), // Reset badge state when type changes
+
+                            // Common Fields
+                            TextInput::make('url')
+                                ->label('URL (path)')
+                                ->helperText('Enter the path to redirect too.'),
+
+                            //== Fields for 'imageWithGradientText' ==
+                            Grid::make(2)
+                                ->visible(fn (Get $get) => $get('type') === 'imageWithGradientText')
+                                ->schema([
+                                    MediaPicker::make('imageUrl')
+                                        ->label('Background Image')
+                                        ->required(),
+                                    TextInput::make('altText')
+                                        ->label('Image Alt Text')
+                                        ->required(),
+                                    Textarea::make('title')
+                                        ->label('Title')
+                                        ->helperText('Use <br> for line breaks.')
+                                        ->required(),
+                                    ColorPicker::make('gradientColor')
+                                        ->label('Gradient Start Color')
+                                        ->required(),
+                                    ColorPicker::make('textColor')
+                                        ->label('Text Color')
+                                        ->required(),
+                                ]),
+
+                            //== Fields for 'solidColorBanner' ==
+                            Grid::make(2)
+                                ->visible(fn (Get $get) => $get('type') === 'solidColorBanner')
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->label('Title')
+                                        ->required(),
+                                    TextInput::make('subtitle')
+                                        ->label('Subtitle'),
+                                    ColorPicker::make('backgroundColor')
+                                        ->label('Background Color')
+                                        ->required(),
+                                    ColorPicker::make('textColor')
+                                        ->label('Text Color')
+                                        ->required(),
+                                ]),
+
+                            //== Fields for 'imageWithBadge' ==
+                            Grid::make(2)
+                                ->visible(fn (Get $get) => $get('type') === 'imageWithBadge')
+                                ->schema([
+                                    MediaPicker::make('imageUrl')
+                                        ->label('Background Image')
+                                        ->required(),
+                                    TextInput::make('altText')
+                                        ->label('Image Alt Text')
+                                        ->required(),
+                                ]),
+
+                            //== Nested Repeater for 'badge' fields ==
+                            Grid::make(1)
+                                ->visible(fn (Get $get) => $get('type') === 'imageWithBadge')
+                                ->schema([
+                                    Grid::make(3)
+                                        ->schema([
+                                            TextInput::make('badge_line1')
+                                                ->label('Badge Line 1'),
+                                            TextInput::make('badge_mainText')
+                                                ->label('Badge Main Text')
+                                                ->required(),
+                                            TextInput::make('badge_line2')
+                                                ->label('Badge Line 2'),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            ColorPicker::make('badge_backgroundColor')
+                                                ->label('Badge Background Color')
+                                                ->required(),
+                                            ColorPicker::make('badge_textColor')
+                                                ->label('Badge Text Color')
+                                                ->required(),
+                                        ]),
+                                ]),
                         ])
+                        ->columnSpanFull(),
                 ]),
 
         ];
     }
 
     public function saveForm() {
-
-        // I hate this but we are working around issues & have to manually save the images
-        foreach ($this->data as $key => $value) {
-            if ($key == 'homeHeroSlides') {
-                foreach ($value as $slideKey =>  $value2) {
-                    foreach ($value2 as $key => $value3) {
-                        if ($key == 'image') {
-                            foreach ($value3 as $key => $image) {
-                                if ($image instanceof TemporaryUploadedFile) {
-
-                                    /** @var TemporaryUploadedFile $image */
-                                    Storage::put('public/hero_image/' . $image->getFilename(), $image->getContent());
-                                    $updatedValue = '/hero_image/' . $image->getFilename();
-                                    $this->data['homeHeroSlides'][$slideKey]['imageUrl'] = $updatedValue;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        $this->settingsForm->validate();
+        Cache::forget('home-data');
 
         foreach ($this->data as $key => $value) {
 
