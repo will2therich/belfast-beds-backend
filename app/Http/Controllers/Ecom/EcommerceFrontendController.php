@@ -188,23 +188,6 @@ class EcommerceFrontendController
 
             $categoryService->menuGenerateAdditionalFilters($categoryObj, $category, $tempArray);
             $categoryService->menuGenerateCustomPropertyFilters($categoryObj, $category, $tempArray);
-//            $additionalFilters = $categoryObj->filters()->get();
-//
-//            foreach ($additionalFilters as $filter) {
-//                $filterArr = [
-//                    'name' => $filter->name,
-//                    'subCategories' => []
-//                ];
-//
-//                foreach ($filter->options as $option) {
-//                    $filterArr['subCategories'][] = [
-//                        'name' => str_replace('{{ category }}', $category['name'], $option['label']),
-//                        'slug' => $category['slug'] . '?' . $filter->name . '=' . StringHelper::generateSlug($option['search'])
-//                    ];
-//                }
-//
-//                $tempArray['subCategories'][] = $filterArr;
-//            }
 
             $formattedMenu[] = $tempArray;
         }

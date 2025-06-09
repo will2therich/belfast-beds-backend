@@ -45,6 +45,18 @@ class CartController
             ->withCookie($cookie);
     }
 
+    public function deleteItemFromCart(CartService $cartService, $lineItemId)
+    {
+        $cart = $cartService->loadCart();
+        $lineItem = LineItem::find($lineItemId);
+
+        if ($cart->lineItems()->where('id', $lineItemId)->exists()) {
+            $lineItem->delete();
+        }
+
+        return $this->loadCart($cartService);
+    }
+
     public function updateQuantity(CartService $cartService, $lineItemId, $quantity)
     {
         $lineItem = LineItem::find($lineItemId);

@@ -34,5 +34,6 @@ Route::get('/me', [\App\Http\Controllers\Auth\AuthenticationController::class, '
 
 
 Route::get('/cart', [\App\Http\Controllers\Checkout\CartController::class, 'loadCart']);
+Route::delete('/cart/{lineItemId}', [\App\Http\Controllers\Checkout\CartController::class, 'deleteItemFromCart']);
 Route::post('/cart/add', [\App\Http\Controllers\Checkout\CartController::class, 'addToCart']);
 Route::post('/cart/quantity/{lineItemId}/{quantity}', [\App\Http\Controllers\Checkout\CartController::class, 'updateQuantity']);
