@@ -63,7 +63,7 @@ class EcommerceFrontendController
                 'featuredProducts' => $products,
                 'promoBlocks' => $promoBlocksData,
                 'promotion' => $promotionData,
-                'aboutText' => $aboutText->value
+                'aboutText' => $aboutText
             ];
         });
 
