@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Checkout;
 
 use App\Models\Ecom\Address;
 use App\Models\Ecom\Cart;
@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
-use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 
 class CheckoutController

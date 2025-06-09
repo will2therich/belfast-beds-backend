@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Product;
 use App\Filament\Resources\Product\CustomPropertiesResource\Pages;
 use App\Filament\Resources\Product\CustomPropertiesResource\RelationManagers;
 use App\Models\Product\CustomProperties;
+use App\Models\Product\ProductCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -28,7 +29,9 @@ class CustomPropertiesResource extends Resource
                 Forms\Components\Section::make('Property Options')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('name'),
+                        Forms\Components\TextInput::make('internal_name'),
+                        Forms\Components\TextInput::make('name')
+                            ->required(),
                         Forms\Components\Toggle::make('display_in_filters')
                             ->inline(false),
                         Forms\Components\Toggle::make('display_on_product_page')
@@ -38,6 +41,11 @@ class CustomPropertiesResource extends Resource
                             ->inline(false),
                         Forms\Components\Toggle::make('display_in_nav_menu')
                             ->inline(false),
+                        Forms\Components\Select::make('nav_menu_categories')
+                            ->label('Display In Nav Menus')
+                            ->searchable()
+                            ->multiple()
+                            ->options(ProductCategory::query()->whereNull('parent_category_id')->get()->pluck('name', 'id'))
                     ])
             ]);
     }
@@ -47,6 +55,7 @@ class CustomPropertiesResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id'),
+                Tables\Columns\TextColumn::make('internal_name'),
                 Tables\Columns\TextColumn::make('name')
             ])
             ->filters([

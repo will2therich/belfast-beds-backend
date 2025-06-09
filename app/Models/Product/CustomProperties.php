@@ -9,16 +9,22 @@ class CustomProperties extends Model
 {
 
     protected $guarded = [];
+
+    protected $casts = [
+        'nav_menu_categories' => 'array'
+    ];
+
     public function migration(Blueprint $table)
     {
         $table->id();
+        $table->string('internal_name')->nullable();
         $table->string('name');
         $table->string('slug');
         $table->boolean('display_in_filters')->default(false);
         $table->boolean('display_on_product_page')->default(true);
         $table->boolean('featured_on_product_page')->default(false);
         $table->boolean('display_in_nav_menu')->default(false);
-        $table->longText('nav_menu_categories')->nullable();
+        $table->json('nav_menu_categories')->nullable();
         $table->timestamps();
     }
 

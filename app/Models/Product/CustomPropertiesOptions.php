@@ -25,4 +25,19 @@ class CustomPropertiesOptions extends Model
     {
         return $this->belongsTo(CustomProperties::class, 'custom_property_id', 'id');
     }
+
+    /**
+     * The categories that a product belongs to.
+     */
+    public function products()
+    {
+        return $this->belongsToMany(
+            CustomPropertiesOptions::class,
+            'product_custom_properties',
+            'custom_property_option_id',
+            'product_id',
+            'id',
+            'id'
+        );
+    }
 }

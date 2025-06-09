@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ecom;
 
 use App\Models\Product\Product;
 use App\Models\StockItem;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Product;
 
+use App\Filament\Resources\Product\CustomPropertiesResource\RelationManagers\PropertiesRelationManager;
 use App\Filament\Resources\Product\ProductResource\Pages;
 use App\Filament\Resources\Product\ProductResource\RelationManagers;
 use App\Models\Product\Product;
@@ -68,7 +69,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\CustomPropertiesRelationManager::class
         ];
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ecom;
 
 use App\Helper\IconHelper;
 use App\Helper\ImageHelper;
@@ -13,6 +13,7 @@ use App\Models\Product\ProductCategory;
 use App\Models\Product\Properties;
 use App\Models\Settings;
 use App\Models\Supplier;
+use App\Services\CategoryService;
 use Illuminate\Support\Facades\Cache;
 
 class EcommerceFrontendController
@@ -21,20 +22,19 @@ class EcommerceFrontendController
     public function loadHomePage()
     {
         $data = Cache::remember('home-data', now()->addHour(), function () {
-            $heroSlides = Settings::where('key', 'homeHeroSlides')->first();
-            $features = Settings::where('key', 'features')->first();
-            $promoBlocks = Settings::where('key', 'promoBlocks')->first();
+            $allSettings = Settings::all()->pluck('value', 'key');
             $promoSettings = Settings::where('key', 'like', 'promotional_%')->get();
             $products = Product::where('featured', true)->limit(10)->get();
-            $aboutText = Settings::where('key', 'about_text')->first();
+            $aboutText = $allSettings['about_text'];
+
             $heroData = [];
             $featuresData = [];
             $promoBlocksData = [];
             $promotionData = [];
 
-            if ($heroSlides instanceof Settings) $heroData = json_decode($heroSlides->value, 2);
-            if ($features instanceof Settings) $featuresData = json_decode($features->value, 2);
-            if ($promoBlocks instanceof Settings) $promoBlocksData = json_decode($promoBlocks->value, 2);
+            if (isset($allSettings['homeHeroSlides'])) $heroData = json_decode($allSettings['homeHeroSlides'], 1);
+            if (isset($allSettings['features'])) $featuresData = json_decode($allSettings['features'], 1);
+            if (isset($allSettings['promoBlocks'])) $promoBlocksData = json_decode($allSettings['promoBlocks'], 1);
 
 
             foreach ($featuresData as &$featuresDatum) {
@@ -147,104 +147,6 @@ class EcommerceFrontendController
         ]);
     }
 
-    public function loadProduct($slug)
-    {
-        $product = Product::where('slug', $slug)->firstOrFail();
-        $brand = $product->brand()->first();
-        $category = $product->categories()->first();
-        $productArray = $product->toArray();
-        $productArray['brand'] = $brand->name;
-        $productArray['brand_logo'] = $brand->image;
-        $productArray['brand_slug'] = $brand->slug;
-        $productArray['category'] = $category->name;
-        $productArray['category_slug'] = $category->slug;
-        $properties = [];
-        $priceOptionsArr = [];
-
-        $options = $product->options;
-        $addons = $product->addons;
-        $priceOptions = $product->priceOptions()->orderBy('price')->get();
-        $featuredProperties = [];
-        $custProperties = [];
-
-        foreach ($product->customProperties as $customProperty) {
-            $propertyDetails  = $customProperty->customProperty;
-
-            $tempArr = [
-                'title' => $propertyDetails->name,
-                'value' => $customProperty->name,
-                'icon' => IconHelper::generateSvgIcon($customProperty->icon),
-                'description' => $customProperty->description
-            ];
-
-            if ($propertyDetails->display_on_product_page) $custProperties[] = $tempArr;
-            if ($propertyDetails->featured_on_product_page) $featuredProperties[] = $tempArr;
-        }
-
-        $productArray['properties'] = $custProperties;
-        $productArray['featuredProperties'] = $featuredProperties;
-
-        foreach ($priceOptions as $priceOption) {
-            if (!isset($priceOptionsArr[$priceOption->price_group_id])) {
-                $priceGroup = PriceGroup::find($priceOption->price_group_id);
-
-                if ($priceGroup instanceof PriceGroup) {
-                    $priceOptionsArr[$priceOption->price_group_id] = [
-                        'id' => $priceGroup->id,
-                        'rs_id' => $priceGroup->rs_id,
-                        'name' => $priceGroup->name,
-                        'type' => 'PriceGroup',
-                        'values' => []
-                    ];
-                }
-            }
-
-            $priceOptionsArr[$priceOption->price_group_id]['values'][] = $priceOption->toArray();
-        }
-
-
-        foreach  ($options as $option) {
-            if (!isset($properties['property_' . $option->property_id])) {
-                $propertyObj = Properties::find($option->property_id);
-
-                if ($propertyObj instanceof Properties) {
-                    $properties['property_' . $option->property_id] = [
-                        'id' => $propertyObj->id,
-                        'rs_id' => $propertyObj->rs_id,
-                        'name' => $propertyObj->name,
-                        'type' => 'Option',
-                        'values' => []
-                    ];
-                }
-            }
-
-            $properties['property_' . $option->property_id]['values'][] = $option->toArray();
-        }
-
-        foreach  ($addons as $addon) {
-            if (!isset($properties['addon_' . $addon->add_on_id])) {
-                $addonObj = AddOn::find($addon->add_on_id);
-
-                if ($addonObj instanceof AddOn) {
-                    $properties['addon_' . $addon->add_on_id] = [
-                        'id' => $addonObj->id,
-                        'rs_id' => $addonObj->rs_id,
-                        'name' => $addonObj->name,
-                        'type' => 'Addon',
-                        'values' => []
-                    ];
-                }
-            }
-
-            $properties['addon_' . $addon->add_on_id]['values'][] = $addon->toArray();
-        }
-
-        $productArray['fields'] = array_values(array_merge($priceOptionsArr, $properties));
-
-
-        return response()->json($productArray);
-    }
-
     public function loadPage($slug)
     {
         $page = Pages::where('slug', $slug)->firstOrFail();
@@ -252,6 +154,7 @@ class EcommerceFrontendController
     }
 
     private function getCategoryMenus(&$formattedMenu) {
+        $categoryService = new CategoryService();
         // Get all parent categories with their sub-categories
         $categories = ProductCategory::with('childCategories') // Eager load child categories
             ->whereNull('parent_category_id') // Only fetch parent categories
@@ -282,23 +185,26 @@ class EcommerceFrontendController
                 ];
             }
 
-            $additionalFilters = $categoryObj->filters()->get();
 
-            foreach ($additionalFilters as $filter) {
-                $filterArr = [
-                    'name' => $filter->name,
-                    'subCategories' => []
-                ];
-
-                foreach ($filter->options as $option) {
-                    $filterArr['subCategories'][] = [
-                        'name' => str_replace('{{ category }}', $category['name'], $option['label']),
-                        'slug' => $category['slug'] . '?' . $filter->name . '=' . StringHelper::generateSlug($option['search'])
-                    ];
-                }
-
-                $tempArray['subCategories'][] = $filterArr;
-            }
+            $categoryService->menuGenerateAdditionalFilters($categoryObj, $category, $tempArray);
+            $categoryService->menuGenerateCustomPropertyFilters($categoryObj, $category, $tempArray);
+//            $additionalFilters = $categoryObj->filters()->get();
+//
+//            foreach ($additionalFilters as $filter) {
+//                $filterArr = [
+//                    'name' => $filter->name,
+//                    'subCategories' => []
+//                ];
+//
+//                foreach ($filter->options as $option) {
+//                    $filterArr['subCategories'][] = [
+//                        'name' => str_replace('{{ category }}', $category['name'], $option['label']),
+//                        'slug' => $category['slug'] . '?' . $filter->name . '=' . StringHelper::generateSlug($option['search'])
+//                    ];
+//                }
+//
+//                $tempArray['subCategories'][] = $filterArr;
+//            }
 
             $formattedMenu[] = $tempArray;
         }

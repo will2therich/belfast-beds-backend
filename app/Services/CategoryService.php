@@ -11,6 +11,47 @@ use Illuminate\Http\Request;
 class CategoryService
 {
 
+    public function menuGenerateAdditionalFilters($categoryObj, $category, &$tempArray)
+    {
+        $additionalFilters = $categoryObj->filters()->get();
+
+        foreach ($additionalFilters as $filter) {
+            $filterArr = [
+                'name' => $filter->name,
+                'subCategories' => []
+            ];
+
+            foreach ($filter->options as $option) {
+                $filterArr['subCategories'][] = [
+                    'name' => str_replace('{{ category }}', $category['name'], $option['label']),
+                    'slug' => $category['slug'] . '?' . $filter->name . '=' . StringHelper::generateSlug($option['search'])
+                ];
+            }
+
+            $tempArray['subCategories'][] = $filterArr;
+        }
+    }
+
+    public function menuGenerateCustomPropertyFilters($categoryObj, $category, &$tempArray)
+    {
+        $customProperties = CustomProperties::query()->whereJsonContains('nav_menu_categories', '' . $categoryObj->id)->get();
+
+        foreach ($customProperties as $property) {
+            $filterArr = [
+                'name' => $property->name,
+                'subCategories' => []
+            ];
+
+            foreach ($property->options as $option) {
+                $filterArr['subCategories'][] = [
+                    'name' => str_replace('{{ category }}', $category['name'], $option['name']),
+                    'slug' => $category['slug'] . '?' . $property->slug . '=' . urlencode($option['name'])
+                ];
+            }
+
+            $tempArray['subCategories'][] = $filterArr;
+        }
+    }
 
     public function generateAdditionalFilters($parentCategory)
     {

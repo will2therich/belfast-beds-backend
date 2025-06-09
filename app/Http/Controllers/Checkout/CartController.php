@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Checkout;
 
-use App\Models\Ecom\Cart;
 use App\Models\Ecom\LineItem;
+use App\Models\Product\Product;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -63,6 +63,12 @@ class CartController
         $data = $request->all();
 
         $price = $cartService->calculatePriceForItem($data);
+
+        if (empty($price)) {
+            $product = Product::find($data['productId']);
+            $price = $product->starting_price;
+        }
+
         foreach ($data['detailedSelections'] as $selection) $options[$selection['fieldName']] = $selection['selectedName'];
 
         $lineItem = new LineItem();

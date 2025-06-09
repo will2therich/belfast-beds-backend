@@ -65,9 +65,7 @@ class PropertiesRelationManager extends RelationManager
                             foreach ($productObjs as $productObj) {
                                 $productObj->customProperties()->syncWithoutDetaching($record);
                             }
-                            dd($productObjs);
                         }
-                        dd($record, $data);
                     }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

@@ -13,7 +13,7 @@ class CreateCustomProperties extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['slug'] = 'prop_' . StringHelper::generateSlug($data['name']);
+        $data['slug'] = 'prop_' . StringHelper::generateSlug($data['name']) . '_' . time();
         return parent::mutateFormDataBeforeCreate($data);
     }
 }

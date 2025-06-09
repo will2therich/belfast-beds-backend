@@ -3,7 +3,7 @@
  * Controller is responsible for general category related pages including brands, categories, collections & search
  *
  */
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ecom;
 
 use App\Models\Ecom\ProductCollections;
 use App\Models\Product\Product;
