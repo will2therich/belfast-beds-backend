@@ -298,6 +298,15 @@ class RetailSystemFullSync extends Command
                             );
 
                             $optionObj->image = $path;
+                        } elseif (isset($option['Photo']['@attributes'])) {
+                            $path = 'addon/' . $addonGroupObj->id . '/' . $option['Photo']['@attributes']['attribute'];
+                            $this->saveImage(
+                                $option['Photo']['@attributes']['id'],
+                                $option['Photo']['@attributes']['attribute'],
+                                $path
+                            );
+
+                            $optionObj->image = $path;
                         }
 
                         $optionObj->save();
@@ -334,6 +343,15 @@ class RetailSystemFullSync extends Command
                             if (isset($product['PhotoHiRes'])) {
                                 if (isset($product['PhotoHiRes']['@attributes'])) $product['PhotoHiRes'] = [$product['PhotoHiRes']];
                                 foreach ($product['PhotoHiRes'] as $photo) {
+                                    if (isset($photo['@attributes'])) {
+                                        $path = 'products/' . $productId . '/' . $photo['@attributes']['attribute'];
+                                        $this->saveImage($photo['@attributes']['id'], $photo['@attributes']['attribute'], $path);
+                                        $photos[] = $path;
+                                    }
+                                }
+                            } elseif (isset($product['Photo'])) {
+                                if (isset($product['Photo']['@attributes'])) $product['Photo'] = [$product['PhotoHiRes']];
+                                foreach ($product['Photo'] as $photo) {
                                     if (isset($photo['@attributes'])) {
                                         $path = 'products/' . $productId . '/' . $photo['@attributes']['attribute'];
                                         $this->saveImage($photo['@attributes']['id'], $photo['@attributes']['attribute'], $path);
@@ -447,6 +465,22 @@ class RetailSystemFullSync extends Command
             }
 
             $productObj->addons()->sync($addonOptionsId);
+        } elseif (isset($productData['AddOnGroupLink'])) {
+            if (isset($productData['AddOnGroupLink']['@attributes'])) $productData['AddOnGroupLink'] = [$productData['AddOnGroupLink']];
+            $propertyOptions = [];
+
+            foreach ($productData['AddOnGroupLink'] as $groupLink) {
+                $addon = AddOn::where('rs_id', $groupLink['@attributes']['linkid'])->first();
+
+                if ($addon instanceof AddOn) {
+                    $propertyOptions = array_merge(
+                        $propertyOptions,
+                        AddOnOptions::where('add_on_id', $addon->id)->get()->pluck('rs_id')->toArray()
+                    );
+                }
+            }
+
+            $productObj->addons()->sync($propertyOptions);
         }
     }
 
