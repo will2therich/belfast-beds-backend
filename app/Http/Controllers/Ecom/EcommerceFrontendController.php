@@ -4,16 +4,13 @@ namespace App\Http\Controllers\Ecom;
 
 use App\Helper\IconHelper;
 use App\Helper\ImageHelper;
-use App\Helper\StringHelper;
 use App\Models\Core\Pages;
-use App\Models\Product\AddOn;
-use App\Models\Product\PriceGroup;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
-use App\Models\Product\Properties;
 use App\Models\Settings;
 use App\Models\Supplier;
 use App\Services\CategoryService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class EcommerceFrontendController
@@ -56,6 +53,12 @@ class EcommerceFrontendController
             foreach ($promoSettings as $promoSetting) {
                 $promotionData[str_replace('promotional_', '', $promoSetting->key)] = $promoSetting->value;
             }
+
+
+            $promoEnd = Carbon::make($promotionData['endDate']);
+            $now = Carbon::now();
+
+            if ($now > $promoEnd) $promotionData['active'] = 0;
 
             return [
                 'heroSlides' => $heroData,

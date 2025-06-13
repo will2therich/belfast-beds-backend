@@ -8,6 +8,7 @@ class IconHelper
 {
 
     public static function generateSvgIcon($iconName) {
+        if (empty($iconName)) return '';
         $iconFactory = app(Factory::class);
         try {
             return $iconFactory->svg($iconName)->toHtml();
