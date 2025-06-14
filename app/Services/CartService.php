@@ -42,7 +42,7 @@ class CartService
         if (is_iterable($cart->selected_services)) {
             foreach ($cart->selected_services as $selected_service) {
                 $service = AdditionalService::find($selected_service);
-                if ($service instanceof AdditionalService) $value += (float)$service->price;
+                if ($service instanceof AdditionalService) $value += (float) $service->price;
             }
         }
 
