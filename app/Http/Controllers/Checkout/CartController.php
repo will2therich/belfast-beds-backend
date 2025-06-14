@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Checkout;
 
+use App\Models\Ecom\AdditionalService;
 use App\Models\Ecom\LineItem;
 use App\Models\Product\Product;
 use App\Services\CartService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -38,11 +40,45 @@ class CartController
             true
         );
 
+        $includedCategoryIds = [];
 
+        foreach ($responseArr['line_items'] as $lineItem) {
+            $product = Product::find($lineItem['product_id']);
+
+            $includedCategoryIds = array_merge(
+                $includedCategoryIds,
+                $product->categories()->get()->pluck('id')->toArray()
+            );
+        }
+
+        $includedCategoryIds = array_unique($includedCategoryIds);
+
+        $additionalServices = AdditionalService::query()->where(function (Builder $query) use ($includedCategoryIds) {
+            foreach ($includedCategoryIds as $categoryId) {
+                $query->orWhereJsonContains('category_ids', '' . $categoryId);
+            }
+        })->get()->toArray();
+
+        $responseArr['additionalServices'] = $additionalServices;
+        $responseArr['selectedServices'] = $responseArr['selected_services'];
+        unset($responseArr['selected_services']);
 
         return response()
             ->json($responseArr)
             ->withCookie($cookie);
+    }
+
+    public function updateCart(Request $request, CartService $cartService)
+    {
+        $cart = $cartService->loadCart();
+
+        if ($request->has('selectedServices')) {
+            $cart->selected_services = $request->selectedServices;
+            $cart->save();
+
+        }
+
+        return $this->loadCart($cartService);
     }
 
     public function deleteItemFromCart(CartService $cartService, $lineItemId)
@@ -98,4 +134,5 @@ class CartController
         return $this->loadCart($cartService);
 
     }
+
 }

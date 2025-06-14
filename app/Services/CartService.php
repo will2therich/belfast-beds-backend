@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Ecom\AdditionalService;
 use App\Models\Ecom\Cart;
 use App\Models\PivotTables\ProductPriceGroup;
 use App\Models\Product\PriceGroupOptions;
@@ -36,6 +37,13 @@ class CartService
 
         foreach ($cart->lineItems as $lineItem) {
             $value += (float) $lineItem->price * (int) $lineItem->quantity;
+        }
+
+        if (is_iterable($cart->selected_services)) {
+            foreach ($cart->selected_services as $selected_service) {
+                $service = AdditionalService::find($selected_service);
+                if ($service instanceof AdditionalService) $value += (float)$service->price;
+            }
         }
 
         $cart->value = $value;

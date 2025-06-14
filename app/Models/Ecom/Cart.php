@@ -12,6 +12,11 @@ class Cart extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'additional_services' => 'array',
+        'selected_services' => 'array',
+    ];
+
     public function migration(Blueprint $table)
     {
         $table->id();
@@ -23,6 +28,8 @@ class Cart extends Model
         $table->string('telephone')->nullable();
         $table->foreignId('shipping_address_id')->nullable();
         $table->foreignId('billing_address_id')->nullable();
+        $table->longText('additional_services')->nullable();
+        $table->longText('selected_services')->nullable();
         $table->float('value');
         $table->timestamps();
     }
